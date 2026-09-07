@@ -19,11 +19,7 @@ jobs:
           set -e
           rm -rf /tmp/aa /tmp/ugs
           git clone --depth 1 https://github.com/aa-gamerz22/aa-gamerz-games.git /tmp/aa
-          git clone --depth 1 --filter=blob:none --no-checkout https://github.com/bubbls/UGS-Assets.git /tmp/ugs
-          cd /tmp/ugs
-          git sparse-checkout init --cone
-          git sparse-checkout set .
-          git checkout
+          git clone --depth 1 --filter=blob:none https://github.com/bubbls/UGS-Assets.git /tmp/ugs
           cd "$GITHUB_WORKSPACE"
           python3 scripts/import_games.py /tmp/aa /tmp/ugs
       - name: Commit imported games
