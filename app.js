@@ -98,29 +98,7 @@ const games=[
  {name:'Neon Blaster',icon:'🔵',category:'Action',ugs:'neon blaster'},
  {name:'Neverending Legacy',icon:'🏰',category:'Strategy',ugs:'neverending legacy'},
  {name:'Ninja Obby Parkour',icon:'🥷',category:'Platformer',ugs:'ninja obby parkour'},
- {name:'Noob Miner',icon:'⛏️',category:'Adventure',ugs:'noob miner'},
- {name:'Ragdoll Archers',icon:'🏹',category:'Action',ugs:'ragdoll archers'},
- {name:'Ragdoll Hit',icon:'🤸',category:'Action',ugs:'ragdoll hit'},
- {name:'Red Ball 4',icon:'🔴',category:'Platformer',ugs:'red ball 4'},
- {name:'Retro Bowl',icon:'🏈',category:'Sports',ugs:'retro bowl'},
- {name:'Retro Highway',icon:'🛣️',category:'Racing',ugs:'retro highway'},
- {name:'Rooftop Snipers',icon:'🔫',category:'Action',ugs:'rooftop snipers'},
- {name:'Run 3',icon:'🏃',category:'Arcade',ugs:'run 3'},
- {name:'Sandboxels',icon:'🧪',category:'Sandbox',ugs:'sandboxels'},
- {name:'Sandtris',icon:'🟨',category:'Puzzle',ugs:'sandtris'},
- {name:'Short Life',icon:'🏃',category:'Action',ugs:'short life'},
- {name:'Slope',icon:'🟢',category:'Racing',ugs:'slope'},
- {name:'Slope 2 Player',icon:'🟢',category:'Multiplayer',ugs:'slope 2 player'},
- {name:'Slow Roads',icon:'🛣️',category:'Racing',ugs:'slow roads'},
- {name:'Smash Karts',icon:'🏎️',category:'Multiplayer',ugs:'smash karts'},
- {name:'Snow Rider 3D',icon:'🏂',category:'Sports',ugs:'snow rider 3D'},
- {name:'Soccer Bros',icon:'⚽',category:'Sports',ugs:'soccer bros'},
- {name:'Soccer Random',icon:'⚽',category:'Sports',ugs:'soccer random'},
- {name:'Solar Sandbox',icon:'🪐',category:'Sandbox',ugs:'solar sandbox'},
- {name:'Solar Smash',icon:'🌎',category:'Simulation',ugs:'solar smash'},
- {name:'Space Waves',icon:'🌌',category:'Arcade',ugs:'space waves'},
- {name:'Stickman Clash',icon:'🤺',category:'Action',ugs:'Stickman Clash'},
- {name:'Stickman GTA',icon:'🕶️',category:'Action',ugs:'STICKMAN GTA'}
+ {name:'Noob Miner',icon:'⛏️',category:'Adventure',ugs:'noob miner'}
 ];
 const base='https://aa-gamerz22.github.io/aa-gamerz-games/';
 const ugsBase='https://cdn.jsdelivr.net/gh/bubbls/UGS-Assets@main/';
