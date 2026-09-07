@@ -4,6 +4,11 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
+    paths:
+      - '.github/workflows/import-games.yml'
+      - 'scripts/import_games.py'
+      - 'index.html'
+      - 'app.js'
 
 permissions:
   contents: write
@@ -11,7 +16,7 @@ permissions:
 jobs:
   import-games:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - name: Checkout Aither Gaming
         uses: actions/checkout@v4
@@ -21,7 +26,7 @@ jobs:
       - name: Clone supplied game collections
         shell: bash
         run: |
-          set -euxo pipefail
+          set -euo pipefail
           rm -rf /tmp/aa /tmp/ugs
           git clone --depth 1 https://github.com/aa-gamerz22/aa-gamerz-games.git /tmp/aa
           git clone --depth 1 https://github.com/bubbls/UGS-Assets.git /tmp/ugs
@@ -29,19 +34,28 @@ jobs:
       - name: Copy 100 real games into games/
         shell: bash
         run: |
-          set -euxo pipefail
+          set -euo pipefail
           python3 scripts/import_games.py /tmp/aa /tmp/ugs
           test -d games
-          test "$(find games -mindepth 1 -maxdepth 1 -type d | wc -l)" -eq 100
-          test "$(find games -mindepth 2 -maxdepth 2 -name index.html -type f | wc -l)" -eq 100
+          folders=$(find games -mindepth 1 -maxdepth 1 -type d | wc -l)
+          indexes=$(find games -mindepth 2 -maxdepth 2 -name index.html -type f | wc -l)
+          echo "Game folders: $folders"
+          echo "Playable entry points: $indexes"
+          test "$folders" -eq 100
+          test "$indexes" -eq 100
+          test -s games.json
+          test -s CREDITS.md
 
       - name: Commit the actual local game files
         shell: bash
         run: |
-          set -euxo pipefail
+          set -euo pipefail
           git config user.name "Aither Gaming Importer"
-          git config user.email "actions@users.noreply.github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A games games.json app.js CREDITS.md README.md index.html
-          git diff --cached --quiet && exit 0
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
           git commit -m "Add 100 local game source folders"
-          git push
+          git push origin HEAD:main
