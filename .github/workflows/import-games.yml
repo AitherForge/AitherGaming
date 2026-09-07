@@ -1,0 +1,36 @@
+name: Import Aither Gaming
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  import-games:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Import game source files locally
+        shell: bash
+        run: |
+          set -e
+          rm -rf /tmp/aa /tmp/ugs
+          git clone --depth 1 https://github.com/aa-gamerz22/aa-gamerz-games.git /tmp/aa
+          git clone --depth 1 --filter=blob:none --no-checkout https://github.com/bubbls/UGS-Assets.git /tmp/ugs
+          cd /tmp/ugs
+          git sparse-checkout init --cone
+          git sparse-checkout set .
+          git checkout
+          cd "$GITHUB_WORKSPACE"
+          python3 scripts/import_games.py /tmp/aa /tmp/ugs
+      - name: Commit imported games
+        run: |
+          git config user.name "Aither Gaming Importer"
+          git config user.email "actions@users.noreply.github.com"
+          git add games app.js games.json CREDITS.md index.html README.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Import 100 game source files into games folder"
+          git push
