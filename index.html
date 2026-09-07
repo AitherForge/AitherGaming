@@ -4,24 +4,24 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#080b14">
-  <meta name="description" content="Aither Gaming — a fast, mobile-friendly browser game hub.">
+  <meta name="description" content="Aither Gaming — 100 locally stored browser games.">
   <title>Aither Gaming</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header class="topbar">
     <a class="brand" href="#top" aria-label="Aither Gaming home"><span class="brand-mark">A</span><span>Aither <b>Gaming</b></span></a>
-    <nav><a href="#games">Games</a><a href="#minecraft">Minecraft</a><a href="#sources">Sources</a></nav>
+    <nav><a href="#games">Games</a><a href="#credits">Credits</a></nav>
     <button id="themeButton" class="icon-button" aria-label="Toggle theme">☼</button>
   </header>
   <main id="top">
-    <section class="hero"><div class="hero-copy"><p class="eyebrow">AITHER FORGE • GAMING</p><h1>Play. Pick. <span>Go.</span></h1><p class="hero-text">A clean game launcher for Aither — with browser games, Eaglercraft clients, and more sources in one place.</p><div class="hero-actions"><a class="primary" href="#games">Browse games</a><a class="secondary" href="#minecraft">Play Minecraft</a></div></div><div class="hero-orb" aria-hidden="true"><div class="orb-core">▶</div></div></section>
+    <section class="hero"><div class="hero-copy"><p class="eyebrow">AITHER FORGE • GAMING</p><h1>Play. Pick. <span>Go.</span></h1><p class="hero-text">A fast game launcher with 100 games stored directly inside Aither Gaming.</p><div class="hero-actions"><a class="primary" href="#games">Browse games</a><a class="secondary" href="#credits">Credits</a></div></div><div class="hero-orb" aria-hidden="true"><div class="orb-core">▶</div></div></section>
     <section class="toolbar" id="games"><div><h2>Game library</h2><p id="count">Loading games…</p></div><label class="search"><span>⌕</span><input id="search" type="search" placeholder="Search games…" autocomplete="off"></label></section>
-    <div class="chips" id="filters" aria-label="Game categories"></div><section class="game-grid" id="gameGrid" aria-live="polite"></section>
-    <section id="minecraft" class="feature-section"><div class="section-heading"><div><p class="eyebrow">EAGLERCRAFT EXTRAS</p><h2>Browser Minecraft</h2></div><span class="pill">1.3 • 1.5 • 1.8</span></div><p class="muted">Launch the Eaglercraft clients from the Eaglercraft Extras project. It provides clients, worlds, servers, resource packs and skins.</p><div class="mc-grid"><a class="mc-card" href="https://eaglercraftextras.github.io/1.8.html" target="_blank" rel="noopener"><strong>1.8</strong><span>Launch client →</span></a><a class="mc-card" href="https://eaglercraftextras.github.io/1.5.html" target="_blank" rel="noopener"><strong>1.5</strong><span>Launch client →</span></a><a class="mc-card" href="https://eaglercraftextras.github.io/1.3.html" target="_blank" rel="noopener"><strong>1.3</strong><span>Launch client →</span></a></div></section>
-    <section id="sources" class="sources-section"><div class="section-heading"><div><p class="eyebrow">SOURCE CATALOG</p><h2>More game sources</h2></div></div><div class="source-grid"><a class="source-card" href="https://github.com/x8rr/Eaglercraft-Extras" target="_blank" rel="noopener"><b>Eaglercraft Extras</b><span>Clients, worlds, packs and skins</span></a><a class="source-card" href="https://github.com/aa-gamerz22/aa-gamerz-games" target="_blank" rel="noopener"><b>AA Gamerz Games</b><span>Large collection of browser games</span></a><a class="source-card" href="https://drive.google.com/drive/folders/1ou3mI5xJVQv8Vt_MvwejPtf7zStSnU-s" target="_blank" rel="noopener"><b>Drive game pack</b><span>Open supplied Google Drive source</span></a><a class="source-card" href="https://drive.google.com/file/d/1lQnwB_6FZ-wPXQPg3NxcBTEVJRFxY00u/view" target="_blank" rel="noopener"><b>Drive game file</b><span>Open supplied Google Drive file</span></a><a class="source-card" href="https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/preview?pli=1&tab=t.0" target="_blank" rel="noopener"><b>Game document</b><span>Open supplied Google Doc source</span></a></div><p class="license-note">Aither Gaming keeps third-party games attributed to their original projects. Do not redistribute source code or assets unless their licenses/permissions allow it.</p></section>
+    <div class="chips" id="filters" aria-label="Game categories"></div>
+    <section class="game-grid" id="gameGrid" aria-live="polite"></section>
+    <section id="credits" class="feature-section"><div class="section-heading"><div><p class="eyebrow">AITHER GAMING</p><h2>100 local games</h2></div><span class="pill">LOCAL FILES</span></div><p class="muted">Each game is stored in its own folder inside <code>games/</code>. The launcher does not send players to another game website.</p><a class="secondary" href="CREDITS.md">View credits</a></section>
   </main>
-  <footer><span>© Aither Forge • Aither Gaming</span><a href="https://github.com/AitherForge/AitherGaming">GitHub</a></footer>
+  <footer><span>© Aither Forge • Aither Gaming</span></footer>
   <script src="app.js"></script>
 </body>
 </html>
