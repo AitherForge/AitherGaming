@@ -1,9 +1,9 @@
 name: Import Aither Gaming
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
-  workflow_dispatch:
 
 permissions:
   contents: write
@@ -11,22 +11,37 @@ permissions:
 jobs:
   import-games:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
-      - name: Import game source files locally
+      - name: Checkout Aither Gaming
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Clone supplied game collections
         shell: bash
         run: |
-          set -e
+          set -euxo pipefail
           rm -rf /tmp/aa /tmp/ugs
           git clone --depth 1 https://github.com/aa-gamerz22/aa-gamerz-games.git /tmp/aa
-          git clone --depth 1 --filter=blob:none https://github.com/bubbls/UGS-Assets.git /tmp/ugs
-          cd "$GITHUB_WORKSPACE"
-          python3 scripts/import_games.py /tmp/aa /tmp/ugs
-      - name: Commit imported games
+          git clone --depth 1 https://github.com/bubbls/UGS-Assets.git /tmp/ugs
+
+      - name: Copy 100 real games into games/
+        shell: bash
         run: |
+          set -euxo pipefail
+          python3 scripts/import_games.py /tmp/aa /tmp/ugs
+          test -d games
+          test "$(find games -mindepth 1 -maxdepth 1 -type d | wc -l)" -eq 100
+          test "$(find games -mindepth 2 -maxdepth 2 -name index.html -type f | wc -l)" -eq 100
+
+      - name: Commit the actual local game files
+        shell: bash
+        run: |
+          set -euxo pipefail
           git config user.name "Aither Gaming Importer"
           git config user.email "actions@users.noreply.github.com"
-          git add games app.js games.json CREDITS.md index.html README.md
+          git add -A games games.json app.js CREDITS.md README.md index.html
           git diff --cached --quiet && exit 0
-          git commit -m "Import 100 game source files into games folder"
+          git commit -m "Add 100 local game source folders"
           git push
