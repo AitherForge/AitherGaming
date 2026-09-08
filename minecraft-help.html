@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#080b14"><title>Minecraft Help • Aither Gaming</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.help{max-width:1100px;margin:0 auto;padding:48px 20px 80px}.back{display:inline-block;margin-bottom:28px}.help h1{font-size:clamp(2.2rem,6vw,4rem);margin:.2em 0}.help .lead{font-size:1.1rem;opacity:.8;max-width:720px}.help-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;margin-top:30px}.help-card{padding:22px;border:1px solid rgba(255,255,255,.1);border-radius:18px;background:rgba(255,255,255,.045)}.help-card h2{margin-top:0}.cmd{display:block;margin:10px 0;padding:12px 14px;border-radius:10px;background:#080b14;overflow:auto;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.9rem}.note{opacity:.72;font-size:.9rem}.copy{cursor:pointer;border:0;border-radius:9px;padding:8px 11px;margin-top:6px}.light .help-card{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.1)}
+</style></head>
+<body>
+<header class="topbar"><a class="brand" href="index.html"><span class="brand-mark">A</span><span>Aither <b>Gaming</b></span></a><nav><a href="index.html#games">Games</a><a href="index.html#credits">Credits</a></nav><button id="themeButton" class="icon-button">☼</button></header>
+<main class="help"><a class="secondary back" href="index.html">← Back to Aither Gaming</a><p class="eyebrow">AITHER GAMING • MINECRAFT HELP</p><h1>Minecraft Help</h1><p class="lead">Quick help for commands, command blocks, teleporting, effects, items, gamerules, and common Java/Bedrock command tasks.</p>
+<div class="help-grid">
+<section class="help-card"><h2>Command basics</h2><p>Commands normally start with <code>/</code>. Use <code>/help</code> to see commands available in your edition and version.</p><code class="cmd">/help</code><code class="cmd">/help teleport</code><code class="cmd">/help give</code><p class="note">Command syntax can differ between Java Edition and Bedrock Edition.</p></section>
+<section class="help-card"><h2>Teleport</h2><code class="cmd">/tp @s 100 64 100</code><code class="cmd">/tp @a 0 80 0</code><p class="note">@s = yourself, @p = nearest player, @a = all players, @r = random player, @e = entities.</p></section>
+<section class="help-card"><h2>Give items</h2><code class="cmd">/give @s minecraft:diamond 64</code><code class="cmd">/give @p minecraft:command_block 1</code><p class="note">Item IDs and advanced item syntax vary by edition/version.</p></section>
+<section class="help-card"><h2>Gamemode</h2><code class="cmd">/gamemode creative @s</code><code class="cmd">/gamemode survival @s</code><code class="cmd">/gamemode adventure @s</code><code class="cmd">/gamemode spectator @s</code></section>
+<section class="help-card"><h2>Effects</h2><code class="cmd">/effect give @s minecraft:speed 60 1</code><code class="cmd">/effect clear @s</code><p class="note">Effect syntax differs between Java and Bedrock.</p></section>
+<section class="help-card"><h2>Weather & time</h2><code class="cmd">/weather clear</code><code class="cmd">/weather rain</code><code class="cmd">/time set day</code><code class="cmd">/time set night</code></section>
+<section class="help-card"><h2>Gamerules</h2><code class="cmd">/gamerule keepInventory true</code><code class="cmd">/gamerule doDaylightCycle false</code><code class="cmd">/gamerule doMobSpawning false</code><p class="note">Gamerule names available to you depend on your edition and version.</p></section>
+<section class="help-card"><h2>Command blocks</h2><p>Get one with:</p><code class="cmd">/give @s minecraft:command_block 1</code><p>Place it, enter a command without the leading <code>/</code>, then power it with redstone. Chain and repeating blocks can automate command systems.</p></section>
+<section class="help-card"><h2>Selectors</h2><code class="cmd">@s — yourself</code><code class="cmd">@p — nearest player</code><code class="cmd">@a — all players</code><code class="cmd">@r — random player</code><code class="cmd">@e — entities</code></section>
+<section class="help-card"><h2>Useful commands</h2><code class="cmd">/locate structure minecraft:village_plains</code><code class="cmd">/setworldspawn</code><code class="cmd">/spawnpoint @s</code><code class="cmd">/kill @e[type=minecraft:item]</code></section>
+</div>
+</main><footer><span>© Aither Forge • Aither Gaming</span></footer>
+<script>const b=document.getElementById('themeButton');if(localStorage.getItem('aither-theme')==='light')document.body.classList.add('light');b.onclick=()=>{document.body.classList.toggle('light');localStorage.setItem('aither-theme',document.body.classList.contains('light')?'light':'dark')};</script>
+</body></html>
