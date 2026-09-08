@@ -18,7 +18,7 @@ concurrency:
 jobs:
   import-games:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 180
     steps:
       - name: Checkout Aither Gaming
         uses: actions/checkout@v5
@@ -26,25 +26,44 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Download UGS and clone GitHub game collections
+      - name: Clone all GitHub game collections
         shell: bash
         run: |
           set -euo pipefail
           rm -rf /tmp/ugs /tmp/eaglercraft-extras /tmp/aa
 
-          python3 -m pip install --disable-pip-version-check --no-input gdown
-          gdown --folder 'https://drive.google.com/drive/folders/1ou3mI5xJVQv8Vt_MvwejPtf7zStSnU-s' -O /tmp/ugs --remaining-ok
+          clone_with_retry() {
+            local url="$1"
+            local destination="$2"
+            for attempt in 1 2 3; do
+              echo "Cloning $url (attempt $attempt/3)..."
+              rm -rf "$destination"
+              if git clone --depth 1 --no-tags "$url" "$destination"; then
+                return 0
+              fi
+              echo "Clone failed; retrying..."
+              sleep $((attempt * 5))
+            done
+            echo "Unable to clone $url after 3 attempts."
+            return 1
+          }
 
-          git clone --depth 1 https://github.com/x8rr/Eaglercraft-Extras.git /tmp/eaglercraft-extras
-          git clone --depth 1 https://github.com/aa-gamerz22/aa-gamerz-games.git /tmp/aa
+          clone_with_retry https://github.com/bubbls/UGS-Assets.git /tmp/ugs
+          clone_with_retry https://github.com/x8rr/Eaglercraft-Extras.git /tmp/eaglercraft-extras
+          clone_with_retry https://github.com/aa-gamerz22/aa-gamerz-games.git /tmp/aa
 
           test -d /tmp/ugs
           test -d /tmp/eaglercraft-extras
           test -d /tmp/aa
-          echo "UGS Google Drive contents:"
-          find /tmp/ugs -maxdepth 2 -type f | head -50
 
-      - name: Copy 170 UGS games and 30 GitHub games
+          echo "UGS-Assets root folders:"
+          find /tmp/ugs -mindepth 1 -maxdepth 1 -type d | sed 's#^/tmp/ugs/##' | sort | head -200
+          echo "Eaglercraft Extras root folders:"
+          find /tmp/eaglercraft-extras -mindepth 1 -maxdepth 1 -type d | sed 's#^/tmp/eaglercraft-extras/##' | sort | head -200
+          echo "AA Gamerz root folders:"
+          find /tmp/aa -mindepth 1 -maxdepth 1 -type d | sed 's#^/tmp/aa/##' | sort | head -200
+
+      - name: Import every usable GitHub game file collection
         shell: bash
         run: |
           set -euo pipefail
@@ -54,8 +73,8 @@ jobs:
           indexes=$(find games -mindepth 2 -maxdepth 2 -name index.html -type f | wc -l)
           echo "Total game folders including AI Originals: $folders"
           echo "Total playable entry points including AI Originals: $indexes"
-          test "$folders" -ge 200
-          test "$indexes" -ge 200
+          test "$folders" -gt 0
+          test "$indexes" -gt 0
           test -s games.json
           test -s CREDITS.md
 
@@ -71,7 +90,7 @@ jobs:
             exit 0
           fi
           git diff --cached --stat
-          git commit -m "Import 200 local games: 170 UGS and 30 GitHub [skip ci]"
+          git commit -m "Import all usable GitHub game files [skip ci]"
 
           for attempt in 1 2 3; do
             git fetch origin main
