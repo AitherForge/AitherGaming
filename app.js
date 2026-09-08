@@ -106,7 +106,17 @@ resendVerification.addEventListener('click',async()=>{
 });
 
 async function init(){
-  games=await fetch('games.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('games.json failed');return r.json()});
+  const [mainResponse,aiResponse]=await Promise.all([
+    fetch('games.json',{cache:'no-store'}),
+    fetch('ai-games.json',{cache:'no-store'})
+  ]);
+  if(!mainResponse.ok)throw Error('games.json failed');
+  games=await mainResponse.json();
+  if(aiResponse.ok){
+    const aiGames=await aiResponse.json();
+    const existing=new Set(games.map(g=>g.path));
+    games=[...games,...aiGames.filter(g=>!existing.has(g.path))];
+  }
   const categories=['All',...new Set(games.map(g=>g.category))];
   filters.innerHTML=categories.map(c=>`<button class="chip ${c==='All'?'active':''}" data-category="${c}">${c}</button>`).join('');
   filters.addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;active=b.dataset.category;document.querySelectorAll('.chip').forEach(x=>x.classList.toggle('active',x===b));render()});
