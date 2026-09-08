@@ -28,7 +28,10 @@ jobs:
 
       - name: Install import tools
         shell: bash
-        run: python3 -m pip install --disable-pip-version-check --no-input gdown
+        run: |
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check --no-input --upgrade gdown
+          gdown --version
 
       - name: Download 100 UGS games from Google Drive
         shell: bash
@@ -40,7 +43,7 @@ jobs:
             echo "UGS Google Drive download attempt $attempt/3..."
             rm -rf /tmp/ugs-drive
             mkdir -p /tmp/ugs-drive
-            if gdown --folder "$DRIVE_URL" -O /tmp/ugs-drive --remaining-ok --continue; then
+            if gdown "$DRIVE_URL" -O /tmp/ugs-drive --folder; then
               success=1
               break
             fi
