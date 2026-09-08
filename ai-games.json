@@ -1,12 +1,12 @@
 [
-  {"name":"Neon Dodge","icon":"⚡","category":"AI Originals","path":"games/ai-neon-dodge"},
-  {"name":"Snake Arena","icon":"🐍","category":"AI Originals","path":"games/ai-snake-arena"},
-  {"name":"Breakout","icon":"🧱","category":"AI Originals","path":"games/ai-breakout"},
-  {"name":"Reaction Rush","icon":"⚡","category":"AI Originals","path":"games/ai-reaction-rush"},
-  {"name":"Memory Match","icon":"🧠","category":"AI Originals","path":"games/ai-memory-match"},
-  {"name":"Flappy Fly","icon":"🐦","category":"AI Originals","path":"games/ai-flappy-fly"},
-  {"name":"Math Blitz","icon":"➗","category":"AI Originals","path":"games/ai-math-blitz"},
-  {"name":"Asteroid Blaster","icon":"☄️","category":"AI Originals","path":"games/ai-dodge-asteroids"},
-  {"name":"2048","icon":"🔢","category":"AI Originals","path":"games/ai-2048"},
-  {"name":"Mini Mines","icon":"💣","category":"AI Originals","path":"games/ai-minesweeper"}
+  {"name":"Neon Dodge 2.0","icon":"⚡","category":"AI Originals","path":"games/ai-neon-dodge-v2"},
+  {"name":"Snake Arena 2.0","icon":"🐍","category":"AI Originals","path":"games/ai-snake-arena-v2"},
+  {"name":"Breakout 2.0","icon":"🧱","category":"AI Originals","path":"games/ai-breakout-v2"},
+  {"name":"Reaction Rush 2.0","icon":"⚡","category":"AI Originals","path":"games/ai-reaction-rush-v2"},
+  {"name":"Memory Match 2.0","icon":"🧠","category":"AI Originals","path":"games/ai-memory-match-v2"},
+  {"name":"Flappy Fly 2.0","icon":"🐦","category":"AI Originals","path":"games/ai-flappy-fly-v2"},
+  {"name":"Math Blitz 2.0","icon":"➗","category":"AI Originals","path":"games/ai-math-blitz-v2"},
+  {"name":"Asteroid Blaster 2.0","icon":"☄️","category":"AI Originals","path":"games/ai-dodge-asteroids-v2"},
+  {"name":"2048 2.0","icon":"🔢","category":"AI Originals","path":"games/ai-2048-v2"},
+  {"name":"Mini Mines 2.0","icon":"💣","category":"AI Originals","path":"games/ai-minesweeper-v2"}
 ]
