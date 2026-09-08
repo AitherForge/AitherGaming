@@ -37,9 +37,8 @@ ugs = discover_game_roots(UGS)
 print(f"AA Gamerz playable roots: {len(aa)}")
 print(f"UGS playable roots: {len(ugs)}")
 
-# The source collections are allowed to change. There is deliberately NO
-# minimum quota for either collection: use every valid source in priority
-# order until the library reaches 100 games.
+# Source collections can change. Never require an arbitrary per-source quota.
+# Prefer AA Gamerz when available, then fill the remaining slots from UGS.
 selected = []
 used_slugs = set()
 used_names = set()
@@ -103,11 +102,8 @@ for i, (name, slug, source, source_root) in enumerate(selected, 1):
     encoding="utf-8",
 )
 
-(ROOT / "app.js").write_text(
-    '''let games=[];\nconst grid=document.getElementById("gameGrid"),search=document.getElementById("search"),count=document.getElementById("count"),filters=document.getElementById("filters");\nlet active="All";\nasync function init(){games=await fetch("games.json",{cache:"no-store"}).then(r=>{if(!r.ok)throw Error();return r.json()});filters.innerHTML='<button class="chip active" data-category="All">All</button>';filters.onclick=e=>{const b=e.target.closest(".chip");if(!b)return;active=b.dataset.category;document.querySelectorAll(".chip").forEach(x=>x.classList.toggle("active",x===b));render()};search.oninput=render;render()}\nfunction render(){const q=search.value.trim().toLowerCase(),v=games.filter(g=>(active==="All"||g.category===active)&&(!q||g.name.toLowerCase().includes(q)));count.textContent=`${v.length} games ready to play`;grid.innerHTML=v.length?v.map(g=>`<a class="game-card" href="${g.path}/"><div class="game-icon">${g.icon}</div><h3>${g.name}</h3><p>${g.category}</p><span class="play">Play game →</span></a>`).join(""): '<div class="game-card" style="grid-column:1/-1;text-align:center"><h3>No games found</h3></div>'}\nconst themeButton=document.getElementById("themeButton"),saved=localStorage.getItem("aither-theme");if(saved==="light")document.body.classList.add("light");themeButton.onclick=()=>{document.body.classList.toggle("light");localStorage.setItem("aither-theme",document.body.classList.contains("light")?"light":"dark")};init().catch(()=>count.textContent="Game library failed to load");\n''',
-    encoding="utf-8",
-)
-
+# app.js is maintained separately because it contains the Aither Account
+# integration. The importer must never regenerate it and erase authentication.
 (ROOT / "CREDITS.md").write_text("\n".join(credits) + "\n", encoding="utf-8")
 
 print(f"Imported {len(selected)} complete local game folders")
