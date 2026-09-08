@@ -12,6 +12,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: aither-gaming-import
+  cancel-in-progress: true
+
 jobs:
   import-games:
     runs-on: ubuntu-latest
@@ -21,6 +25,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
+          persist-credentials: true
 
       - name: Clone supplied game collections
         shell: bash
@@ -51,10 +56,28 @@ jobs:
           set -euo pipefail
           git config user.name "Aither Gaming Importer"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A games games.json app.js CREDITS.md README.md index.html
+
+          # Only commit generated game content. app.js is intentionally excluded
+          # because it contains the Aither Account integration.
+          git add -A games games.json CREDITS.md
           if git diff --cached --quiet; then
-            echo "No changes to commit."
+            echo "No game changes to commit."
             exit 0
           fi
+
           git commit -m "Add 100 local game source folders [skip ci]"
-          git push origin HEAD:main
+
+          # The repository may receive another Aither change while the large
+          # game import is running. Rebase onto the newest main before pushing.
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              echo "Game import pushed successfully."
+              exit 0
+            fi
+            echo "Push attempt $attempt failed; syncing with origin/main..."
+            git fetch origin main
+            git rebase origin/main
+          done
+
+          echo "Unable to push the imported games after 3 attempts."
+          exit 1
