@@ -1,0 +1,12 @@
+[
+  {"name":"Neon Dodge","icon":"⚡","category":"AI Originals","path":"games/ai-neon-dodge"},
+  {"name":"Snake Arena","icon":"🐍","category":"AI Originals","path":"games/ai-snake-arena"},
+  {"name":"Breakout","icon":"🧱","category":"AI Originals","path":"games/ai-breakout"},
+  {"name":"Reaction Rush","icon":"⚡","category":"AI Originals","path":"games/ai-reaction-rush"},
+  {"name":"Memory Match","icon":"🧠","category":"AI Originals","path":"games/ai-memory-match"},
+  {"name":"Flappy Fly","icon":"🐦","category":"AI Originals","path":"games/ai-flappy-fly"},
+  {"name":"Math Blitz","icon":"➗","category":"AI Originals","path":"games/ai-math-blitz"},
+  {"name":"Asteroid Blaster","icon":"☄️","category":"AI Originals","path":"games/ai-dodge-asteroids"},
+  {"name":"2048","icon":"🔢","category":"AI Originals","path":"games/ai-2048"},
+  {"name":"Mini Mines","icon":"💣","category":"AI Originals","path":"games/ai-minesweeper"}
+]
