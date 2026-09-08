@@ -7,19 +7,18 @@ on:
     paths:
       - '.github/workflows/import-games.yml'
       - 'scripts/import_games.py'
-      - 'index.html'
 
 permissions:
   contents: write
 
 concurrency:
   group: aither-gaming-import
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   import-games:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - name: Checkout Aither Gaming
         uses: actions/checkout@v5
@@ -56,27 +55,23 @@ jobs:
           set -euo pipefail
           git config user.name "Aither Gaming Importer"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          # Only commit generated game content. app.js is intentionally excluded
-          # because it contains the Aither Account integration.
           git add -A games games.json CREDITS.md
           if git diff --cached --quiet; then
             echo "No game changes to commit."
             exit 0
           fi
-
+          git diff --cached --stat
           git commit -m "Add 100 local game source folders [skip ci]"
 
-          # The repository may receive another Aither change while the large
-          # game import is running. Rebase onto the newest main before pushing.
           for attempt in 1 2 3; do
-            if git push origin HEAD:main; then
+            git fetch origin main
+            if git rebase origin/main && git push origin HEAD:main; then
               echo "Game import pushed successfully."
               exit 0
             fi
-            echo "Push attempt $attempt failed; syncing with origin/main..."
-            git fetch origin main
-            git rebase origin/main
+            echo "Push/rebase attempt $attempt failed; retrying from a clean sync..."
+            git rebase --abort 2>/dev/null || true
+            git reset --hard HEAD
           done
 
           echo "Unable to push the imported games after 3 attempts."
