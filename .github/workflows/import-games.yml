@@ -26,13 +26,19 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Clone supplied game collections
+      - name: Clone AA Gamerz collection and download UGS Google Drive folder
         shell: bash
         run: |
           set -euo pipefail
           rm -rf /tmp/aa /tmp/ugs
           git clone --depth 1 https://github.com/aa-gamerz22/aa-gamerz-games.git /tmp/aa
-          git clone --depth 1 https://github.com/bubbls/UGS-Assets.git /tmp/ugs
+
+          python3 -m pip install --disable-pip-version-check --no-input gdown
+          gdown --folder 'https://drive.google.com/drive/folders/1ou3mI5xJVQv8Vt_MvwejPtf7zStSnU-s' -O /tmp/ugs --remaining-ok
+
+          test -d /tmp/ugs
+          echo "UGS Google Drive contents:"
+          find /tmp/ugs -maxdepth 2 -type f | head -50
 
       - name: Copy 100 real games into games/
         shell: bash
@@ -61,7 +67,7 @@ jobs:
             exit 0
           fi
           git diff --cached --stat
-          git commit -m "Add 100 local game source folders [skip ci]"
+          git commit -m "Import 100 local games from UGS Google Drive [skip ci]"
 
           for attempt in 1 2 3; do
             git fetch origin main
