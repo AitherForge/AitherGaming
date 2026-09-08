@@ -35,19 +35,21 @@ jobs:
         run: |
           set -euo pipefail
           DRIVE_URL="https://drive.google.com/drive/folders/1ou3mI5xJVQv8Vt_MvwejPtf7zStSnU-s"
+          success=0
           for attempt in 1 2 3; do
             echo "UGS Google Drive download attempt $attempt/3..."
             rm -rf /tmp/ugs-drive
             mkdir -p /tmp/ugs-drive
             if gdown --folder "$DRIVE_URL" -O /tmp/ugs-drive --remaining-ok --continue; then
+              success=1
               break
-            fi
-            if [ "$attempt" -eq 3 ]; then
-              echo "UGS Google Drive download failed after 3 attempts."
-              exit 1
             fi
             sleep $((attempt * 10))
           done
+          if [ "$success" -ne 1 ]; then
+            echo "UGS Google Drive download failed after 3 attempts."
+            exit 1
+          fi
           file_count=$(find /tmp/ugs-drive -type f | wc -l)
           echo "Downloaded UGS Drive files: $file_count"
           test "$file_count" -gt 0
@@ -64,7 +66,7 @@ jobs:
             for attempt in 1 2 3; do
               echo "Cloning $url (attempt $attempt/3)..."
               rm -rf "$destination"
-              if git clone --depth 1 --no-tags --filter=blob:none "$url" "$destination"; then
+              if git clone --depth 1 --no-tags "$url" "$destination"; then
                 return 0
               fi
               sleep $((attempt * 10))
@@ -95,28 +97,23 @@ jobs:
           test -s games.json
           test -s CREDITS.md
 
-      - name: Prepare repository for GitHub limits
+      - name: Verify files are safe for GitHub
         shell: bash
         run: |
           set -euo pipefail
-          # GitHub rejects individual files at 100 MiB or larger. Keep a safety
-          # margin so the import can always be committed and pushed normally.
-          oversized=0
+          bad=0
           while IFS= read -r -d '' file; do
             size=$(stat -c '%s' "$file")
-            if [ "$size" -ge 99614720 ]; then
-              echo "Skipping GitHub-incompatible file (${size} bytes): $file"
-              rm -f "$file"
-              oversized=$((oversized + 1))
+            if [ "$size" -ge 100000000 ]; then
+              echo "ERROR: file is too large for GitHub: $file ($size bytes)"
+              bad=1
             fi
           done < <(find games -type f -print0)
-          echo "Oversized files removed: $oversized"
-          git config core.longpaths true
-          git config core.compression 1
-          git config pack.windowMemory 50m
-          git config pack.packSizeLimit 50m
-          git config pack.threads 2
-          df -h .
+          if [ "$bad" -ne 0 ]; then
+            echo "The importer must skip oversized games before this step."
+            exit 1
+          fi
+          echo "All imported files are below GitHub's per-file limit."
 
       - name: Commit and push imported game files
         shell: bash
@@ -124,47 +121,40 @@ jobs:
           set -euo pipefail
           git config user.name "Aither Gaming Importer"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config core.compression 0
+          git config http.version HTTP/1.1
 
           echo "Staging imported game files..."
-          git add -A -- games games.json CREDITS.md
-
-          staged_files=$(git diff --cached --name-only | wc -l)
-          staged_bytes=$(git diff --cached --numstat | awk '{a+=$1; d+=$2} END {print a+d+0}')
-          echo "Staged paths: $staged_files"
-          echo "Staged line changes: $staged_bytes"
+          git add games games.json CREDITS.md
+          git status --short
 
           if git diff --cached --quiet; then
             echo "No game changes to commit."
             exit 0
           fi
 
+          echo "Staged file count: $(git diff --cached --name-only | wc -l)"
           echo "Creating import commit..."
-          git commit --no-verify -m "Import Aither Gaming game collections [skip ci]"
+          git commit --no-verify -m "Import Aither Gaming game collections"
 
-          # Another run can update main while this job is importing. Rebase the
-          # completed import commit onto the newest main before pushing.
           for attempt in 1 2 3 4 5; do
             echo "Push attempt $attempt/5..."
-            git fetch --prune origin main
-
-            if ! git merge-base --is-ancestor origin/main HEAD; then
-              echo "Remote main advanced; rebasing import commit..."
-              if ! git rebase origin/main; then
-                echo "Rebase conflict; resetting to the import commit and retrying from remote main."
-                git rebase --abort 2>/dev/null || true
-                git reset --hard HEAD
-                git rebase origin/main
+            git fetch origin main
+            if git merge-base --is-ancestor origin/main HEAD; then
+              if git push origin HEAD:main; then
+                echo "Game import pushed successfully."
+                exit 0
+              fi
+            else
+              echo "main changed while the import was running. Rebuilding the commit on top of origin/main."
+              git rebase origin/main
+              if git push origin HEAD:main; then
+                echo "Game import pushed successfully after rebase."
+                exit 0
               fi
             fi
-
-            if git -c http.version=HTTP/1.1 push origin HEAD:main; then
-              echo "Game import pushed successfully."
-              exit 0
-            fi
-
-            echo "Push attempt $attempt failed; refreshing and retrying..."
             sleep $((attempt * 10))
           done
 
-          echo "Unable to push the imported games after 5 attempts."
+          echo "Unable to push imported games after 5 attempts."
           exit 1
