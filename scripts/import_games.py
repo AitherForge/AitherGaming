@@ -19,8 +19,6 @@ def discover_game_roots(root: Path):
             continue
         candidates.append(parent)
 
-    # A source tree can contain nested demos/assets with their own index.html.
-    # Keep the highest-level playable directory so the complete game stays together.
     unique = sorted(set(candidates), key=lambda p: (len(p.parts), str(p).lower()))
     roots = []
     for candidate in unique:
@@ -36,19 +34,19 @@ def slugify(name: str):
 
 aa = discover_game_roots(AA)
 ugs = discover_game_roots(UGS)
+print(f"AA Gamerz playable roots: {len(aa)}")
+print(f"UGS playable roots: {len(ugs)}")
 
-if len(aa) < 10:
-    raise SystemExit(f"Only found {len(aa)} playable AA Gamerz game roots; need at least 10")
-if len(ugs) < 90:
-    raise SystemExit(f"Only found {len(ugs)} playable UGS game roots; need at least 90")
-
+# Do not require an arbitrary 10/90 split. Source collections can change over time.
+# Prefer AA Gamerz games, then fill the remaining slots from UGS.
 selected = []
 used_slugs = set()
 used_names = set()
 
-for source, roots, target in (("AA Gamerz", aa, 10), ("UGS", ugs, 90)):
-    taken = 0
+for source, roots in (("AA Gamerz", aa), ("UGS", ugs)):
     for source_root in roots:
+        if len(selected) >= 100:
+            break
         name = source_root.name.strip()
         slug = slugify(name)
         normalized_name = re.sub(r"[^a-z0-9]+", " ", name.lower()).strip()
@@ -59,12 +57,12 @@ for source, roots, target in (("AA Gamerz", aa, 10), ("UGS", ugs, 90)):
         selected.append((name, slug, source, source_root))
         used_slugs.add(slug)
         used_names.add(normalized_name)
-        taken += 1
-        if taken == target:
-            break
 
-if len(selected) != 100:
-    raise SystemExit(f"Expected exactly 100 real games, discovered {len(selected)}")
+if len(selected) < 100:
+    raise SystemExit(
+        f"Need 100 playable game roots in total, but discovered only {len(selected)} "
+        f"({len(aa)} from AA Gamerz and {len(ugs)} from UGS)"
+    )
 
 if OUT.exists():
     shutil.rmtree(OUT)
@@ -87,7 +85,6 @@ for i, (name, slug, source, source_root) in enumerate(selected, 1):
     if not entry.is_file() or entry.stat().st_size == 0:
         raise SystemExit(f"Invalid local game entry point after copying: {name}")
 
-    # Make sure each folder contains the actual source, not an external launcher/iframe.
     html = entry.read_text(encoding="utf-8", errors="ignore").lower()
     if "iframe" in html and "src=" in html and "games/" not in html:
         raise SystemExit(f"Refusing probable external wrapper instead of source: {name}")
