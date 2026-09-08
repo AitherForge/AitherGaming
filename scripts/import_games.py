@@ -5,11 +5,14 @@ import sys
 from pathlib import Path
 
 ROOT = Path.cwd()
-AA = Path(sys.argv[1])
-UGS = Path(sys.argv[2])
+UGS = Path(sys.argv[1])
+EAGLERCRAFT = Path(sys.argv[2])
+AA = Path(sys.argv[3])
 OUT = ROOT / "games"
 AI_PREFIX = "ai-"
 MAX_FILE_BYTES = 90 * 1024 * 1024
+UGS_TARGET = 170
+GITHUB_TARGET = 30
 
 
 def discover_game_roots(root: Path):
@@ -53,8 +56,21 @@ def is_probable_local_game(root: Path):
     return True
 
 
-# AI Originals live in the repository itself. Keep them across automated
-# imports so the external 100-game refresh never deletes Aither-made games.
+def add_candidates(selected, roots, source, target, used_slugs, used_names):
+    for source_root in roots:
+        if len(selected) >= target:
+            break
+        name = source_root.name.strip()
+        slug = slugify(name)
+        normalized_name = re.sub(r"[^a-z0-9]+", " ", name.lower()).strip()
+        if not slug or not normalized_name or slug in used_slugs or normalized_name in used_names:
+            continue
+        selected.append((name, slug, source, source_root))
+        used_slugs.add(slug)
+        used_names.add(normalized_name)
+
+
+# Preserve Aither AI Originals across every external refresh.
 ai_backup = ROOT / ".ai-games-backup"
 if ai_backup.exists():
     shutil.rmtree(ai_backup)
@@ -64,43 +80,46 @@ if OUT.exists():
             ai_backup.mkdir(exist_ok=True)
             shutil.copytree(child, ai_backup / child.name)
 
-#aa/ugs discovery
-aa = discover_game_roots(AA)
-ugs = discover_game_roots(UGS)
-print(f"AA Gamerz discovered roots: {len(aa)}")
-print(f"UGS discovered roots: {len(ugs)}")
-aa_valid = [root for root in aa if is_probable_local_game(root)]
-ugs_valid = [root for root in ugs if is_probable_local_game(root)]
-print(f"AA Gamerz local playable roots: {len(aa_valid)}")
-print(f"UGS local playable roots: {len(ugs_valid)}")
+ugs_roots = [root for root in discover_game_roots(UGS) if is_probable_local_game(root)]
+eagler_roots = [root for root in discover_game_roots(EAGLERCRAFT) if is_probable_local_game(root)]
+aa_roots = [root for root in discover_game_roots(AA) if is_probable_local_game(root)]
 
-selected = []
+print(f"UGS usable local games: {len(ugs_roots)}")
+print(f"Eaglercraft Extras usable local games: {len(eagler_roots)}")
+print(f"AA Gamerz usable local games: {len(aa_roots)}")
+
 used_slugs = set()
 used_names = set()
-for source, roots in (("AA Gamerz", aa_valid), ("UGS", ugs_valid)):
-    for source_root in roots:
-        if len(selected) >= 100:
-            break
-        name = source_root.name.strip()
-        slug = slugify(name)
-        normalized_name = re.sub(r"[^a-z0-9]+", " ", name.lower()).strip()
-        if not slug or not normalized_name or slug in used_slugs or normalized_name in used_names:
-            continue
-        if not (source_root / "index.html").is_file():
-            continue
-        selected.append((name, slug, source, source_root))
-        used_slugs.add(slug)
-        used_names.add(normalized_name)
+ugs_selected = []
+github_selected = []
 
-if len(selected) < 100:
-    raise SystemExit(f"Need 100 local playable games, but found only {len(selected)} ({len(aa_valid)} from AA Gamerz and {len(ugs_valid)} from UGS)")
+add_candidates(ugs_selected, ugs_roots, "UGS Google Drive", UGS_TARGET, used_slugs, used_names)
+
+# The 30 GitHub games are selected from both supplied repositories, preferring
+# Eaglercraft Extras first and then AA Gamerz, while removing duplicates.
+add_candidates(github_selected, eagler_roots, "Eaglercraft Extras", GITHUB_TARGET, used_slugs, used_names)
+if len(github_selected) < GITHUB_TARGET:
+    add_candidates(github_selected, aa_roots, "AA Gamerz", GITHUB_TARGET, used_slugs, used_names)
+
+if len(ugs_selected) < UGS_TARGET:
+    raise SystemExit(f"Need {UGS_TARGET} UGS games, but found only {len(ugs_selected)}")
+if len(github_selected) < GITHUB_TARGET:
+    raise SystemExit(f"Need {GITHUB_TARGET} GitHub games, but found only {len(github_selected)} across Eaglercraft Extras and AA Gamerz")
+
+selected = ugs_selected + github_selected
 
 if OUT.exists():
     shutil.rmtree(OUT)
 OUT.mkdir(parents=True)
+
 icons = ["🎮", "🕹️", "⭐", "🔥", "🚀", "🏆", "⚡", "🎯", "🧩", "👾"]
 metadata = []
-credits = ["# Aither Gaming Credits", "", "The imported games are bundled as local source files. Original attribution is retained by source collection.", "", "## Aither AI Originals", "These games were created for Aither Gaming and are stored directly in the repository.", ""]
+credits = [
+    "# Aither Gaming Credits",
+    "",
+    "The imported games are bundled as local source files. Original attribution is retained by the source collections.",
+    "",
+]
 
 for i, (name, slug, source, source_root) in enumerate(selected, 1):
     destination = OUT / slug
@@ -108,18 +127,31 @@ for i, (name, slug, source, source_root) in enumerate(selected, 1):
     entry = destination / "index.html"
     if not entry.is_file() or entry.stat().st_size == 0:
         raise SystemExit(f"Invalid local game entry point after copying: {name}")
-    metadata.append({"name": name, "icon": icons[(i - 1) % len(icons)], "category": "Games", "path": f"games/{slug}"})
+    category = "UGS" if source == "UGS Google Drive" else "GitHub"
+    metadata.append({
+        "name": name,
+        "icon": icons[(i - 1) % len(icons)],
+        "category": category,
+        "path": f"games/{slug}",
+    })
     credits.append(f"- {name} — {source}")
 
-# Restore AI Originals after the imported collection is rebuilt.
+# Restore Aither AI Originals after the 200-game external collection is rebuilt.
 ai_count = 0
 if ai_backup.exists():
     for child in sorted(ai_backup.iterdir()):
         if child.is_dir() and child.name.startswith(AI_PREFIX) and (child / "index.html").is_file():
             shutil.copytree(child, OUT / child.name)
+            metadata.append({
+                "name": child.name[3:].replace("-", " ").title(),
+                "icon": "🤖",
+                "category": "AI Originals",
+                "path": f"games/{child.name}",
+            })
             ai_count += 1
+            credits.append(f"- {child.name[3:].replace('-', ' ').title()} — Aither AI Original")
     shutil.rmtree(ai_backup)
 
 (ROOT / "games.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 (ROOT / "CREDITS.md").write_text("\n".join(credits) + "\n", encoding="utf-8")
-print(f"Imported {len(selected)} external local game folders and preserved {ai_count} Aither AI Originals")
+print(f"Imported {len(ugs_selected)} UGS games + {len(github_selected)} GitHub games + {ai_count} Aither AI Originals")
