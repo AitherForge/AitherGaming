@@ -8,7 +8,6 @@ on:
       - '.github/workflows/import-games.yml'
       - 'scripts/import_games.py'
       - 'index.html'
-      - 'app.js'
 
 permissions:
   contents: write
@@ -57,5 +56,5 @@ jobs:
             echo "No changes to commit."
             exit 0
           fi
-          git commit -m "Add 100 local game source folders"
+          git commit -m "Add 100 local game source folders [skip ci]"
           git push origin HEAD:main
