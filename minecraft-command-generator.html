@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#080b14"><meta name="description" content="Aither Gaming Minecraft Command Generator.">
+<title>Minecraft Command Generator • Aither Gaming</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.generator-page{max-width:1150px;margin:0 auto;padding:40px 20px 80px}.hero h1{font-size:clamp(2.4rem,6vw,4.8rem);margin:.15em 0}.lead{max-width:820px;opacity:.8;line-height:1.6}.panel{margin-top:24px;padding:24px;border:1px solid rgba(255,255,255,.1);border-radius:20px;background:rgba(255,255,255,.045)}.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}.controls label{display:flex;flex-direction:column;gap:7px;font-weight:700}.controls input,.controls select{padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:inherit}.output{margin-top:20px}.command{display:block;padding:18px;border-radius:12px;background:#080b14;color:#fff;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;overflow:auto;white-space:pre-wrap;word-break:break-word;min-height:24px}.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}.quick{display:flex;flex-wrap:wrap;gap:8px}.quick button,.actions button{border:0;border-radius:10px;padding:10px 14px;cursor:pointer}.info{opacity:.7;font-size:.9rem}.light .panel{background:rgba(0,0,0,.035);border-color:rgba(0,0,0,.1)}.light .command{background:#eef0f4;color:#111}@media(max-width:650px){.generator-page{padding-top:25px}}
+</style></head>
+<body>
+<header class="topbar"><a class="brand" href="index.html"><span class="brand-mark">A</span><span>Aither <b>Gaming</b></span></a><nav><a href="index.html#games">Games</a><a href="minecraft-help.html">Minecraft Help</a><a href="minecraft-command-generator.html">Command Generator</a></nav><button id="themeButton" class="icon-button" aria-label="Toggle theme">☼</button></header>
+<main class="generator-page">
+<a class="secondary" href="minecraft-help.html">← Back to Minecraft Help</a>
+<section class="hero"><p class="eyebrow">AITHER GAMING • MINECRAFT TOOL</p><h1>Command Generator</h1><p class="lead">Build Minecraft commands without memorizing every argument. Pick Java or Bedrock, choose a command, fill in the options, and copy the result.</p></section>
+<section class="panel">
+<div class="controls">
+<label>Edition<select id="edition"><option value="java">Java Edition</option><option value="bedrock">Bedrock Edition</option></select></label>
+<label>Command<select id="type"><option value="give">Give Item</option><option value="tp">Teleport</option><option value="summon">Summon Entity</option><option value="effect">Give Effect</option><option value="gamemode">Gamemode</option><option value="weather">Weather</option><option value="time">Set Time</option><option value="setblock">Set Block</option><option value="fill">Fill Area</option><option value="kill">Kill Target</option><option value="say">Say Message</option><option value="gamerule">Set Gamerule</option><option value="locate">Locate Structure</option></select></label>
+<div id="fields" class="controls" style="grid-column:1/-1"></div>
+</div>
+<div class="output"><h2>Generated command</h2><code id="output" class="command"></code><div class="actions"><button id="copy" class="primary">Copy command</button><button id="reset" class="secondary">Reset</button></div><p id="status" class="info"></p></div>
+</section>
+<section class="panel"><h2>Quick commands</h2><div class="quick"><button data-quick="/gamemode creative @s">Creative</button><button data-quick="/tp @s ~ ~10 ~">Teleport up</button><button data-quick="/give @s minecraft:diamond 64">64 Diamonds</button><button data-quick="/effect give @s minecraft:speed 60 1">Speed</button><button data-quick="/weather clear">Clear weather</button><button data-quick="/time set day">Daytime</button><button data-quick="/gamerule keepInventory true">Keep inventory</button><button data-quick="/summon minecraft:zombie ~ ~ ~">Summon zombie</button></div></section>
+<section class="panel"><h2>Important</h2><p class="info">Command syntax changes between Minecraft versions and editions. Always check the command against your exact version. Aither Gaming generates common command patterns; it does not bypass server permissions or cheats.</p></section>
+</main><footer><span>© Aither Forge • Aither Gaming</span></footer>
+<script>
+const $=id=>document.getElementById(id),edition=$("edition"),type=$("type"),fields=$("fields"),output=$("output"),status=$("status");
+const defs={
+ give:[['target','Target','@s'],['item','Item ID','minecraft:diamond'],['amount','Amount','1']],
+ tp:[['target','Target','@s'],['x','X','~'],['y','Y','~'],['z','Z','~']],
+ summon:[['entity','Entity ID','minecraft:zombie'],['x','X','~'],['y','Y','~'],['z','Z','~']],
+ effect:[['target','Target','@s'],['effect','Effect ID','minecraft:speed'],['duration','Duration (seconds)','60'],['amplifier','Amplifier','1']],
+ gamemode:[['mode','Gamemode','creative'],['target','Target','@s']],
+ weather:[['weather','Weather','clear']],
+ time:[['time','Time','day']],
+ setblock:[['x','X','~'],['y','Y','~-1'],['z','Z','~'],['block','Block ID','minecraft:stone']],
+ fill:[['x1','X1','0'],['y1','Y1','64'],['z1','Z1','0'],['x2','X2','10'],['y2','Y2','64'],['z2','Z2','10'],['block','Block ID','minecraft:stone']],
+ kill:[['target','Target','@e[type=minecraft:item]']],
+ say:[['message','Message','Hello from Aither Gaming!']],
+ gamerule:[['rule','Gamerule','keepInventory'],['value','Value','true']],
+ locate:[['structure','Structure ID','minecraft:village']]
+};
+function renderFields(){fields.innerHTML=(defs[type.value]||[]).map(([id,label,val])=>`<label>${label}<input id="f-${id}" value="${val}" autocomplete="off"></label>`).join('');fields.querySelectorAll('input').forEach(x=>x.addEventListener('input',generate));generate()}
+function val(id){return $("f-"+id)?.value.trim()||''}
+function generate(){let t=type.value,c='';switch(t){case'give':c=`/give ${val('target')} ${val('item')} ${val('amount')}`;break;case'tp':c=`/tp ${val('target')} ${val('x')} ${val('y')} ${val('z')}`;break;case'summon':c=`/summon ${val('entity')} ${val('x')} ${val('y')} ${val('z')}`;break;case'effect':c=edition.value==='bedrock'?`/effect ${val('target')} ${val('effect')} ${val('duration')} ${val('amplifier')} true`:`/effect give ${val('target')} ${val('effect')} ${val('duration')} ${val('amplifier')}`;break;case'gamemode':c=`/gamemode ${val('mode')} ${val('target')}`;break;case'weather':c=`/weather ${val('weather')}`;break;case'time':c=`/time set ${val('time')}`;break;case'setblock':c=`/setblock ${val('x')} ${val('y')} ${val('z')} ${val('block')}`;break;case'fill':c=`/fill ${val('x1')} ${val('y1')} ${val('z1')} ${val('x2')} ${val('y2')} ${val('z2')} ${val('block')}`;break;case'kill':c=`/kill ${val('target')}`;break;case'say':c=`/say ${val('message')}`;break;case'gamerule':c=`/gamerule ${val('rule')} ${val('value')}`;break;case'locate':c=`/locate structure ${val('structure')}`;break}output.textContent=c}
+type.onchange=renderFields;edition.onchange=generate;renderFields();
+$("copy").onclick=async()=>{await navigator.clipboard.writeText(output.textContent);status.textContent='Copied to clipboard!';setTimeout(()=>status.textContent='',1500)};
+$("reset").onclick=()=>{renderFields();status.textContent='Reset.'};document.querySelectorAll('[data-quick]').forEach(b=>b.onclick=()=>{output.textContent=b.dataset.quick;status.textContent='Quick command selected — copy it when ready.'});
+const theme=$("themeButton");if(localStorage.getItem('aither-theme')==='light')document.body.classList.add('light');theme.onclick=()=>{document.body.classList.toggle('light');localStorage.setItem('aither-theme',document.body.classList.contains('light')?'light':'dark')};
+</script></body></html>
