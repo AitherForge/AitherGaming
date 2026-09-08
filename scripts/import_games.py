@@ -9,9 +9,12 @@ AA = Path(sys.argv[1])
 UGS = Path(sys.argv[2])
 OUT = ROOT / "games"
 
+# Keep individual files comfortably below GitHub's 100 MiB hard limit.
+MAX_FILE_BYTES = 90 * 1024 * 1024
+
 
 def discover_game_roots(root: Path):
-    """Find real game roots by locating index.html files and removing nested duplicates."""
+    """Find top-level playable game roots without selecting nested asset copies."""
     candidates = []
     for index in root.rglob("index.html"):
         parent = index.parent.resolve()
@@ -33,17 +36,30 @@ def slugify(name: str):
 
 
 def is_probable_local_game(root: Path):
-    """Reject obvious external iframe wrappers before selecting/copying them."""
+    """Accept real local games and reject obvious external iframe wrappers."""
     entry = root / "index.html"
     if not entry.is_file() or entry.stat().st_size == 0:
         return False
-    html = entry.read_text(encoding="utf-8", errors="ignore").lower()
+
+    try:
+        html = entry.read_text(encoding="utf-8", errors="ignore").lower()
+    except OSError:
+        return False
+
     if "<iframe" in html and "src=" in html:
-        # A real local game can contain an iframe for an internal asset, but a
-        # top-level wrapper pointing at another site is not a bundled game.
         iframe_srcs = re.findall(r"<iframe[^>]+src=[\"']([^\"']+)", html)
         if any(src.startswith(("http://", "https://", "//")) for src in iframe_srcs):
             return False
+
+    # Avoid selecting repositories whose playable entry depends on a giant
+    # binary that GitHub will reject during the eventual push.
+    try:
+        for file in root.rglob("*"):
+            if file.is_file() and file.stat().st_size > MAX_FILE_BYTES:
+                return False
+    except OSError:
+        return False
+
     return True
 
 
@@ -52,34 +68,38 @@ ugs = discover_game_roots(UGS)
 print(f"AA Gamerz discovered roots: {len(aa)}")
 print(f"UGS discovered roots: {len(ugs)}")
 
-# Filter invalid/external wrappers before choosing the 100 games.
 aa_valid = [root for root in aa if is_probable_local_game(root)]
 ugs_valid = [root for root in ugs if is_probable_local_game(root)]
 print(f"AA Gamerz local playable roots: {len(aa_valid)}")
 print(f"UGS local playable roots: {len(ugs_valid)}")
 
-# Source collections can change. Never require an arbitrary per-source quota.
-# Prefer AA Gamerz when available, then fill the remaining slots from UGS.
 selected = []
 used_slugs = set()
 used_names = set()
 
+# Prefer AA Gamerz when it contains usable local games, then fill from UGS.
 for source, roots in (("AA Gamerz", aa_valid), ("UGS", ugs_valid)):
     for source_root in roots:
         if len(selected) >= 100:
             break
+
         name = source_root.name.strip()
         slug = slugify(name)
         normalized_name = re.sub(r"[^a-z0-9]+", " ", name.lower()).strip()
-        if not slug or not normalized_name or slug in used_slugs or normalized_name in used_names:
+        if not slug or not normalized_name:
             continue
+        if slug in used_slugs or normalized_name in used_names:
+            continue
+        if not (source_root / "index.html").is_file():
+            continue
+
         selected.append((name, slug, source, source_root))
         used_slugs.add(slug)
         used_names.add(normalized_name)
 
 if len(selected) < 100:
     raise SystemExit(
-        f"Need 100 local playable game roots in total, but discovered only {len(selected)} "
+        f"Need 100 local playable games, but found only {len(selected)} "
         f"({len(aa_valid)} from AA Gamerz and {len(ugs_valid)} from UGS)"
     )
 
@@ -118,7 +138,7 @@ for i, (name, slug, source, source_root) in enumerate(selected, 1):
 )
 
 # app.js is maintained separately because it contains the Aither Account
-# integration. The importer must never regenerate it and erase authentication.
+# integration. Never regenerate or stage it from this importer.
 (ROOT / "CREDITS.md").write_text("\n".join(credits) + "\n", encoding="utf-8")
 
 print(f"Imported {len(selected)} complete local game folders")
