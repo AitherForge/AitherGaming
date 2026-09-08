@@ -18,13 +18,41 @@ concurrency:
 jobs:
   import-games:
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 240
     steps:
       - name: Checkout Aither Gaming
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
           persist-credentials: true
+
+      - name: Install import tools
+        shell: bash
+        run: python3 -m pip install --disable-pip-version-check --no-input gdown
+
+      - name: Download 100 UGS games from Google Drive
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/ugs-drive
+          mkdir -p /tmp/ugs-drive
+          DRIVE_URL="https://drive.google.com/drive/folders/1ou3mI5xJVQv8Vt_MvwejPtf7zStSnU-s"
+          for attempt in 1 2 3; do
+            echo "UGS Google Drive download attempt $attempt/3..."
+            rm -rf /tmp/ugs-drive
+            mkdir -p /tmp/ugs-drive
+            if gdown --folder "$DRIVE_URL" -O /tmp/ugs-drive --remaining-ok --continue; then
+              break
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "UGS Google Drive download failed after 3 attempts."
+              exit 1
+            fi
+            sleep $((attempt * 10))
+          done
+          echo "Downloaded UGS Drive contents:"
+          find /tmp/ugs-drive -type f | wc -l
+          test "$(find /tmp/ugs-drive -type f | wc -l)" -gt 0
 
       - name: Clone all GitHub game collections
         shell: bash
@@ -38,11 +66,11 @@ jobs:
             for attempt in 1 2 3; do
               echo "Cloning $url (attempt $attempt/3)..."
               rm -rf "$destination"
-              if git clone --depth 1 --no-tags "$url" "$destination"; then
+              if git clone --depth 1 --no-tags --filter=blob:none "$url" "$destination"; then
                 return 0
               fi
               echo "Clone failed; retrying..."
-              sleep $((attempt * 5))
+              sleep $((attempt * 10))
             done
             echo "Unable to clone $url after 3 attempts."
             return 1
@@ -56,29 +84,25 @@ jobs:
           test -d /tmp/eaglercraft-extras
           test -d /tmp/aa
 
-          echo "UGS-Assets root folders:"
-          find /tmp/ugs -mindepth 1 -maxdepth 1 -type d | sed 's#^/tmp/ugs/##' | sort | head -200
-          echo "Eaglercraft Extras root folders:"
-          find /tmp/eaglercraft-extras -mindepth 1 -maxdepth 1 -type d | sed 's#^/tmp/eaglercraft-extras/##' | sort | head -200
-          echo "AA Gamerz root folders:"
-          find /tmp/aa -mindepth 1 -maxdepth 1 -type d | sed 's#^/tmp/aa/##' | sort | head -200
-
-      - name: Import every usable GitHub game file collection
+      - name: Import Drive games and every usable GitHub game
         shell: bash
         run: |
           set -euo pipefail
-          python3 scripts/import_games.py /tmp/ugs /tmp/eaglercraft-extras /tmp/aa
+          python3 scripts/import_games.py /tmp/ugs-drive /tmp/ugs /tmp/eaglercraft-extras /tmp/aa
           test -d games
           folders=$(find games -mindepth 1 -maxdepth 1 -type d | wc -l)
           indexes=$(find games -mindepth 2 -maxdepth 2 -name index.html -type f | wc -l)
+          drive_count=$(grep -c 'UGS Google Drive' games.json || true)
           echo "Total game folders including AI Originals: $folders"
           echo "Total playable entry points including AI Originals: $indexes"
+          echo "UGS Drive games in manifest: $drive_count"
           test "$folders" -gt 0
           test "$indexes" -gt 0
+          test "$drive_count" -eq 100
           test -s games.json
           test -s CREDITS.md
 
-      - name: Commit the actual local game files
+      - name: Commit and push imported game files
         shell: bash
         run: |
           set -euo pipefail
@@ -90,17 +114,18 @@ jobs:
             exit 0
           fi
           git diff --cached --stat
-          git commit -m "Import all usable GitHub game files [skip ci]"
+          git commit -m "Import Aither Gaming game collections [skip ci]"
 
           for attempt in 1 2 3; do
             git fetch origin main
-            if git rebase origin/main && git push origin HEAD:main; then
+            git rebase origin/main || { git rebase --abort 2>/dev/null || true; git reset --hard HEAD; continue; }
+            if git push origin HEAD:main; then
               echo "Game import pushed successfully."
               exit 0
             fi
-            echo "Push/rebase attempt $attempt failed; retrying from a clean sync..."
+            echo "Push attempt $attempt failed; retrying..."
             git rebase --abort 2>/dev/null || true
-            git reset --hard HEAD
+            sleep $((attempt * 10))
           done
 
           echo "Unable to push the imported games after 3 attempts."
