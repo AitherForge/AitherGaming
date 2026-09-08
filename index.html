@@ -4,22 +4,23 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#080b14">
-  <meta name="description" content="Aither Gaming — 100 locally stored browser games.">
+  <meta name="description" content="Aither Gaming — 100 locally stored browser games plus Minecraft help.">
   <title>Aither Gaming</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header class="topbar">
     <a class="brand" href="#top" aria-label="Aither Gaming home"><span class="brand-mark">A</span><span>Aither <b>Gaming</b></span></a>
-    <nav><a href="#games">Games</a><a href="#credits">Credits</a></nav>
+    <nav><a href="#games">Games</a><a href="minecraft-help.html">Minecraft Help</a><a href="#credits">Credits</a></nav>
     <button id="themeButton" class="icon-button" aria-label="Toggle theme">☼</button>
   </header>
   <main id="top">
-    <section class="hero"><div class="hero-copy"><p class="eyebrow">AITHER FORGE • GAMING</p><h1>Play. Pick. <span>Go.</span></h1><p class="hero-text">A fast game launcher with 100 games stored directly inside Aither Gaming.</p><div class="hero-actions"><a class="primary" href="#games">Browse games</a><a class="secondary" href="#credits">Credits</a></div></div><div class="hero-orb" aria-hidden="true"><div class="orb-core">▶</div></div></section>
+    <section class="hero"><div class="hero-copy"><p class="eyebrow">AITHER FORGE • GAMING</p><h1>Play. Pick. <span>Go.</span></h1><p class="hero-text">A fast game launcher with games stored directly inside Aither Gaming.</p><div class="hero-actions"><a class="primary" href="#games">Browse games</a><a class="secondary" href="minecraft-help.html">Minecraft Help</a></div></div><div class="hero-orb" aria-hidden="true"><div class="orb-core">▶</div></div></section>
     <section class="toolbar" id="games"><div><h2>Game library</h2><p id="count">Loading games…</p></div><label class="search"><span>⌕</span><input id="search" type="search" placeholder="Search games…" autocomplete="off"></label></section>
     <div class="chips" id="filters" aria-label="Game categories"></div>
     <section class="game-grid" id="gameGrid" aria-live="polite"></section>
-    <section id="credits" class="feature-section"><div class="section-heading"><div><p class="eyebrow">AITHER GAMING</p><h2>100 local games</h2></div><span class="pill">LOCAL FILES</span></div><p class="muted">Each game is stored in its own folder inside <code>games/</code>. The launcher does not send players to another game website.</p><a class="secondary" href="CREDITS.md">View credits</a></section>
+    <section class="feature-section"><div class="section-heading"><div><p class="eyebrow">MINECRAFT</p><h2>Need command help?</h2></div><span class="pill">HELP</span></div><p class="muted">Find quick examples for teleporting, giving items, effects, gamemodes, gamerules, command blocks, selectors, and more.</p><a class="primary" href="minecraft-help.html">Open Minecraft Help</a></section>
+    <section id="credits" class="feature-section"><div class="section-heading"><div><p class="eyebrow">AITHER GAMING</p><h2>Game credits</h2></div><span class="pill">LOCAL FILES</span></div><p class="muted">Game attribution and credit information is kept separately from the game cards.</p><a class="secondary" href="CREDITS.md">View credits</a></section>
   </main>
   <footer><span>© Aither Forge • Aither Gaming</span></footer>
   <script src="app.js"></script>
