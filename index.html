@@ -4,58 +4,38 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#080b14">
-  <meta name="description" content="Aither Gaming — browser games plus Minecraft help.">
+  <meta name="description" content="Aither Gaming — a polished local browser game library plus Minecraft help.">
   <title>Aither Gaming</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header class="topbar">
     <a class="brand" href="#top" aria-label="Aither Gaming home"><span class="brand-mark">A</span><span>Aither <b>Gaming</b></span></a>
-    <nav><a href="#games">Games</a><a href="minecraft-help.html">Minecraft Help</a><a href="#credits">Credits</a></nav>
-    <div class="account-area">
-      <button id="accountButton" class="account-button" type="button">Account</button>
-      <button id="themeButton" class="icon-button" aria-label="Toggle theme">☼</button>
-    </div>
+    <nav><a href="#games">Games</a><a href="#favorites">Favorites</a><a href="minecraft-help.html">Minecraft Help</a><a href="#credits">Credits</a></nav>
+    <div class="account-area"><button id="accountButton" class="account-button" type="button">Account</button><button id="themeButton" class="icon-button" aria-label="Toggle theme">☼</button></div>
   </header>
   <main id="top">
-    <section class="hero"><div class="hero-copy"><p class="eyebrow">AITHER FORGE • GAMING</p><h1>Play. Pick. <span>Go.</span></h1><p class="hero-text">A fast game launcher with games stored directly inside Aither Gaming.</p><div class="hero-actions"><a class="primary" href="#games">Browse games</a><a class="secondary" href="minecraft-help.html">Minecraft Help</a></div></div><div class="hero-orb" aria-hidden="true"><div class="orb-core">▶</div></div></section>
-    <section class="toolbar" id="games"><div><h2>Game library</h2><p id="count">Loading games…</p></div><label class="search"><span>⌕</span><input id="search" type="search" placeholder="Search games…" autocomplete="off"></label></section>
-    <div class="chips" id="filters" aria-label="Game categories"></div>
-    <section class="game-grid" id="gameGrid" aria-live="polite"></section>
-    <section class="feature-section"><div class="section-heading"><div><p class="eyebrow">MINECRAFT</p><h2>Need command help?</h2></div><span class="pill">HELP</span></div><p class="muted">Find quick examples for teleporting, giving items, effects, gamemodes, gamerules, command blocks, selectors, and more.</p><a class="primary" href="minecraft-help.html">Open Minecraft Help</a></section>
-    <section id="credits" class="feature-section"><div class="section-heading"><div><p class="eyebrow">AITHER GAMING</p><h2>Game credits</h2></div><span class="pill">LOCAL FILES</span></div><p class="muted">Game attribution and credit information is kept separately from the game cards.</p><a class="secondary" href="CREDITS.md">View credits</a></section>
-  </main>
-  <footer><span>© Aither Forge • Aither Gaming</span></footer>
-
-  <div id="accountModal" class="modal" hidden>
-    <div class="modal-backdrop" data-close-account></div>
-    <section class="account-modal" role="dialog" aria-modal="true" aria-labelledby="accountTitle">
-      <button class="modal-close" type="button" aria-label="Close" data-close-account>×</button>
-      <div id="accountLoggedOut">
-        <p class="eyebrow">AITHER ACCOUNT</p>
-        <h2 id="accountTitle">Sign in to Aither Gaming</h2>
-        <p class="muted">Use the same Aither account across supported Aither apps.</p>
-        <div class="account-tabs"><button class="account-tab active" data-account-mode="login" type="button">Sign in</button><button class="account-tab" data-account-mode="register" type="button">Create account</button></div>
-        <form id="accountForm" class="account-form">
-          <label id="nameField" hidden>Name<input id="accountName" autocomplete="name" maxlength="80"></label>
-          <label>Email<input id="accountEmail" type="email" autocomplete="email" required></label>
-          <label>Password<input id="accountPassword" type="password" autocomplete="current-password" minlength="8" required></label>
-          <button class="primary account-submit" type="submit" id="accountSubmit">Sign in</button>
-          <p id="accountMessage" class="account-message" role="status"></p>
-        </form>
-      </div>
-      <div id="accountLoggedIn" hidden>
-        <p class="eyebrow">SIGNED IN</p>
-        <h2 id="accountWelcome">Welcome!</h2>
-        <p id="accountEmailDisplay" class="muted"></p>
-        <div class="account-status"><span>✓</span><div><strong>Aither Account</strong><p id="accountVerifyStatus">Your session is active.</p></div></div>
-        <button id="resendVerification" class="secondary account-full" type="button">Resend verification email</button>
-        <button id="logoutButton" class="danger account-full" type="button">Sign out</button>
-        <p id="accountSignedMessage" class="account-message" role="status"></p>
-      </div>
+    <section class="hero">
+      <div class="hero-copy"><p class="eyebrow">AITHER FORGE • GAMING</p><h1>Your games.<br><span>Your way.</span></h1><p class="hero-text">A fast, polished browser game launcher with local games, favorites, history, smart search, and an Aither Originals collection.</p><div class="hero-actions"><a class="primary" href="#games">Browse games</a><a class="secondary" href="minecraft-help.html">Minecraft Help</a></div><div class="hero-stats"><div><strong id="heroCount">200+</strong><span>games</span></div><div><strong>100%</strong><span>local play</span></div><div><strong>∞</strong><span>favorites</span></div></div></div>
+      <div class="hero-orb" aria-hidden="true"><div class="orb-ring"></div><div class="orb-core">▶</div></div>
     </section>
-  </div>
 
+    <section class="spotlight" id="spotlight"><div><span class="spotlight-label">GAME SPOTLIGHT</span><h2 id="spotlightName">Loading your next favorite…</h2><p id="spotlightMeta">Local game • Ready to play</p></div><button id="spotlightPlay" class="primary" type="button">Play now →</button></section>
+
+    <section class="toolbar" id="games"><div><p class="eyebrow">LIBRARY</p><h2>Game library</h2><p id="count">Loading games…</p></div><label class="search"><span>⌕</span><input id="search" type="search" placeholder="Search games…" autocomplete="off"></label></section>
+    <div class="library-tools"><div class="chips" id="filters" aria-label="Game categories"></div><button id="favoritesToggle" class="chip" type="button">★ Favorites</button></div>
+    <section class="game-grid" id="gameGrid" aria-live="polite"></section>
+
+    <section class="feature-section" id="favorites"><div class="section-heading"><div><p class="eyebrow">YOUR LIBRARY</p><h2>Recently played & favorites</h2></div><span class="pill" id="favoriteCount">0 FAVORITES</span></div><div id="recentGrid" class="mini-grid"></div><p id="emptyRecent" class="muted">Play a game to build your recent list. Tap ★ on any game to keep it here.</p></section>
+
+    <section class="feature-section originals"><div class="section-heading"><div><p class="eyebrow">AITHER ORIGINALS</p><h2>Made for Aither Gaming</h2></div><span class="pill">10 ORIGINALS</span></div><p class="muted">Quick, lightweight games built specifically for this library.</p><div id="originalsGrid" class="mini-grid"></div></section>
+
+    <section class="feature-section"><div class="section-heading"><div><p class="eyebrow">MINECRAFT</p><h2>Need command help?</h2></div><span class="pill">HELP</span></div><p class="muted">Find examples for teleporting, giving items, effects, gamemodes, gamerules, command blocks, selectors, and more.</p><a class="primary" href="minecraft-help.html">Open Minecraft Help</a></section>
+    <section id="credits" class="feature-section"><div class="section-heading"><div><p class="eyebrow">AITHER GAMING</p><h2>Game credits</h2></div><span class="pill">LOCAL FILES</span></div><p class="muted">Game attribution and source information is kept separately from the game cards.</p><a class="secondary" href="CREDITS.md">View credits</a></section>
+  </main>
+  <footer><span>© Aither Forge • Aither Gaming</span><span>Built for fast browser play</span></footer>
+
+  <div id="accountModal" class="modal" hidden><div class="modal-backdrop" data-close-account></div><section class="account-modal" role="dialog" aria-modal="true" aria-labelledby="accountTitle"><button class="modal-close" type="button" aria-label="Close" data-close-account>×</button><div id="accountLoggedOut"><p class="eyebrow">AITHER ACCOUNT</p><h2 id="accountTitle">Sign in to Aither Gaming</h2><p class="muted">Use the same Aither account across supported Aither apps.</p><div class="account-tabs"><button class="account-tab active" data-account-mode="login" type="button">Sign in</button><button class="account-tab" data-account-mode="register" type="button">Create account</button></div><form id="accountForm" class="account-form"><label id="nameField" hidden>Name<input id="accountName" autocomplete="name" maxlength="80"></label><label>Email<input id="accountEmail" type="email" autocomplete="email" required></label><label>Password<input id="accountPassword" type="password" autocomplete="current-password" minlength="8" required></label><button class="primary account-submit" type="submit" id="accountSubmit">Sign in</button><p id="accountMessage" class="account-message" role="status"></p></form></div><div id="accountLoggedIn" hidden><p class="eyebrow">SIGNED IN</p><h2 id="accountWelcome">Welcome!</h2><p id="accountEmailDisplay" class="muted"></p><div class="account-status"><span>✓</span><div><strong>Aither Account</strong><p id="accountVerifyStatus">Your session is active.</p></div></div><button id="resendVerification" class="secondary account-full" type="button">Resend verification email</button><button id="logoutButton" class="danger account-full" type="button">Sign out</button><p id="accountSignedMessage" class="account-message" role="status"></p></div></section></div>
   <script src="app.js"></script>
 </body>
 </html>
