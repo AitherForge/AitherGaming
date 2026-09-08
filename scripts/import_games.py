@@ -37,8 +37,9 @@ ugs = discover_game_roots(UGS)
 print(f"AA Gamerz playable roots: {len(aa)}")
 print(f"UGS playable roots: {len(ugs)}")
 
-# Do not require an arbitrary 10/90 split. Source collections can change over time.
-# Prefer AA Gamerz games, then fill the remaining slots from UGS.
+# The source collections are allowed to change. There is deliberately NO
+# minimum quota for either collection: use every valid source in priority
+# order until the library reaches 100 games.
 selected = []
 used_slugs = set()
 used_names = set()
