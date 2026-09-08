@@ -2,26 +2,187 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#080b14"><title>Minecraft Help • Aither Gaming</title>
+<meta name="theme-color" content="#080b14"><meta name="description" content="Aither Gaming Minecraft Help — commands, command blocks, selectors, gamerules, effects, teleportation, troubleshooting, generators, Java and Bedrock reference.">
+<title>Minecraft Help • Aither Gaming</title>
 <link rel="stylesheet" href="style.css">
 <style>
-.help{max-width:1100px;margin:0 auto;padding:48px 20px 80px}.back{display:inline-block;margin-bottom:28px}.help h1{font-size:clamp(2.2rem,6vw,4rem);margin:.2em 0}.help .lead{font-size:1.1rem;opacity:.8;max-width:720px}.help-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;margin-top:30px}.help-card{padding:22px;border:1px solid rgba(255,255,255,.1);border-radius:18px;background:rgba(255,255,255,.045)}.help-card h2{margin-top:0}.cmd{display:block;margin:10px 0;padding:12px 14px;border-radius:10px;background:#080b14;overflow:auto;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.9rem}.note{opacity:.72;font-size:.9rem}.copy{cursor:pointer;border:0;border-radius:9px;padding:8px 11px;margin-top:6px}.light .help-card{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.1)}
+.help{max-width:1250px;margin:0 auto;padding:42px 20px 80px}.back{display:inline-block;margin-bottom:24px}.hero{padding:28px 0 20px}.hero h1{font-size:clamp(2.4rem,6vw,5rem);margin:.15em 0}.hero .lead{font-size:1.15rem;opacity:.82;max-width:850px;line-height:1.6}.toolbar{position:sticky;top:8px;z-index:5;display:flex;flex-wrap:wrap;gap:10px;padding:12px;margin:18px 0;border:1px solid rgba(255,255,255,.1);border-radius:18px;background:rgba(8,11,20,.9);backdrop-filter:blur(12px)}.toolbar input{flex:1 1 280px;min-width:200px;padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:inherit}.tabs,.toc{display:flex;flex-wrap:wrap;gap:8px}.tabs button,.toc a,.edition{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:inherit;border-radius:999px;padding:9px 13px;text-decoration:none;cursor:pointer}.tabs button.active,.edition.active{background:#fff;color:#080b14}.section{margin-top:38px;scroll-margin-top:95px}.section>h2{font-size:2rem;margin-bottom:8px}.section>p{opacity:.78}.help-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(285px,1fr));gap:16px;margin-top:18px}.help-card{padding:21px;border:1px solid rgba(255,255,255,.1);border-radius:18px;background:rgba(255,255,255,.045);line-height:1.55}.help-card h3{margin-top:0;font-size:1.15rem}.help-card h3 span{font-size:.8rem;opacity:.55}.cmd{display:block;margin:9px 0;padding:11px 13px;border-radius:10px;background:#080b14;overflow:auto;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.88rem;white-space:pre-wrap;word-break:break-word}.note{opacity:.68;font-size:.9rem}.copy{cursor:pointer;border:0;border-radius:8px;padding:7px 10px;margin-top:3px}.tip{border-left:4px solid currentColor;padding:12px 15px;background:rgba(255,255,255,.04);border-radius:8px}.table-wrap{overflow:auto}.ref{width:100%;border-collapse:collapse}.ref th,.ref td{padding:10px;border-bottom:1px solid rgba(255,255,255,.1);text-align:left;vertical-align:top}.ref code{font-family:ui-monospace,monospace}.generator{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}.generator label{display:flex;flex-direction:column;gap:6px;font-weight:600}.generator input,.generator select{padding:11px;border-radius:9px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:inherit}.generated{grid-column:1/-1}.light .toolbar{background:rgba(255,255,255,.9)}.light .help-card{background:rgba(0,0,0,.035);border-color:rgba(0,0,0,.1)}.light .cmd{background:#eef0f4;color:#111}.light .tabs button.active,.light .edition.active{background:#111;color:#fff}.hidden{display:none!important}@media(max-width:650px){.help{padding-top:25px}.toolbar{position:static}.hero h1{font-size:2.7rem}.help-grid{grid-template-columns:1fr}}
 </style></head>
 <body>
-<header class="topbar"><a class="brand" href="index.html"><span class="brand-mark">A</span><span>Aither <b>Gaming</b></span></a><nav><a href="index.html#games">Games</a><a href="index.html#credits">Credits</a></nav><button id="themeButton" class="icon-button">☼</button></header>
-<main class="help"><a class="secondary back" href="index.html">← Back to Aither Gaming</a><p class="eyebrow">AITHER GAMING • MINECRAFT HELP</p><h1>Minecraft Help</h1><p class="lead">Quick help for commands, command blocks, teleporting, effects, items, gamerules, and common Java/Bedrock command tasks.</p>
-<div class="help-grid">
-<section class="help-card"><h2>Command basics</h2><p>Commands normally start with <code>/</code>. Use <code>/help</code> to see commands available in your edition and version.</p><code class="cmd">/help</code><code class="cmd">/help teleport</code><code class="cmd">/help give</code><p class="note">Command syntax can differ between Java Edition and Bedrock Edition.</p></section>
-<section class="help-card"><h2>Teleport</h2><code class="cmd">/tp @s 100 64 100</code><code class="cmd">/tp @a 0 80 0</code><p class="note">@s = yourself, @p = nearest player, @a = all players, @r = random player, @e = entities.</p></section>
-<section class="help-card"><h2>Give items</h2><code class="cmd">/give @s minecraft:diamond 64</code><code class="cmd">/give @p minecraft:command_block 1</code><p class="note">Item IDs and advanced item syntax vary by edition/version.</p></section>
-<section class="help-card"><h2>Gamemode</h2><code class="cmd">/gamemode creative @s</code><code class="cmd">/gamemode survival @s</code><code class="cmd">/gamemode adventure @s</code><code class="cmd">/gamemode spectator @s</code></section>
-<section class="help-card"><h2>Effects</h2><code class="cmd">/effect give @s minecraft:speed 60 1</code><code class="cmd">/effect clear @s</code><p class="note">Effect syntax differs between Java and Bedrock.</p></section>
-<section class="help-card"><h2>Weather & time</h2><code class="cmd">/weather clear</code><code class="cmd">/weather rain</code><code class="cmd">/time set day</code><code class="cmd">/time set night</code></section>
-<section class="help-card"><h2>Gamerules</h2><code class="cmd">/gamerule keepInventory true</code><code class="cmd">/gamerule doDaylightCycle false</code><code class="cmd">/gamerule doMobSpawning false</code><p class="note">Gamerule names available to you depend on your edition and version.</p></section>
-<section class="help-card"><h2>Command blocks</h2><p>Get one with:</p><code class="cmd">/give @s minecraft:command_block 1</code><p>Place it, enter a command without the leading <code>/</code>, then power it with redstone. Chain and repeating blocks can automate command systems.</p></section>
-<section class="help-card"><h2>Selectors</h2><code class="cmd">@s — yourself</code><code class="cmd">@p — nearest player</code><code class="cmd">@a — all players</code><code class="cmd">@r — random player</code><code class="cmd">@e — entities</code></section>
-<section class="help-card"><h2>Useful commands</h2><code class="cmd">/locate structure minecraft:village_plains</code><code class="cmd">/setworldspawn</code><code class="cmd">/spawnpoint @s</code><code class="cmd">/kill @e[type=minecraft:item]</code></section>
-</div>
+<header class="topbar"><a class="brand" href="index.html"><span class="brand-mark">A</span><span>Aither <b>Gaming</b></span></a><nav><a href="index.html#games">Games</a><a href="minecraft-help.html">Minecraft Help</a><a href="index.html#credits">Credits</a></nav><button id="themeButton" class="icon-button" aria-label="Toggle theme">☼</button></header>
+<main class="help">
+<a class="secondary back" href="index.html">← Back to Aither Gaming</a>
+<section class="hero"><p class="eyebrow">AITHER GAMING • MINECRAFT COMMAND CENTER</p><h1>Minecraft Help</h1><p class="lead">A much bigger Minecraft reference for commands, command blocks, selectors, teleporting, items, effects, entities, gamerules, redstone automation, troubleshooting, Java Edition, Bedrock Edition, and quick command generation.</p></section>
+<div class="toolbar"><input id="search" placeholder="Search Minecraft help…" aria-label="Search Minecraft help"><div class="tabs"><button class="edition active" data-edition="all">All</button><button class="edition" data-edition="java">Java</button><button class="edition" data-edition="bedrock">Bedrock</button></div></div>
+<nav class="toc" aria-label="Minecraft help sections"><a href="#basics">Basics</a><a href="#selectors">Selectors</a><a href="#movement">Movement</a><a href="#items">Items</a><a href="#players">Players</a><a href="#effects">Effects</a><a href="#world">World</a><a href="#entities">Entities</a><a href="#blocks">Blocks</a><a href="#command-blocks">Command Blocks</a><a href="#redstone">Automation</a><a href="#gamerules">Gamerules</a><a href="#java-bedrock">Java vs Bedrock</a><a href="#generator">Generator</a><a href="#troubleshooting">Troubleshooting</a></nav>
+
+<section class="section" id="basics"><h2>Command Basics</h2><p>Start here if commands are new to you.</p><div class="help-grid">
+<article class="help-card"><h3>Getting started</h3><code class="cmd">/help</code><code class="cmd">/help teleport</code><code class="cmd">/help give</code><p class="note">Commands require the appropriate permissions/cheats for your world or server.</p></article>
+<article class="help-card"><h3>Command structure</h3><code class="cmd">/command target arguments</code><p>Most commands follow a command name, followed by a target and additional arguments. Always check your exact Minecraft version because syntax changes over time.</p></article>
+<article class="help-card"><h3>Chat shortcuts</h3><p>Press <b>Tab</b> to autocomplete many commands, players, coordinates, and IDs. Use the up arrow to recall previous commands.</p></article>
+<article class="help-card"><h3>Permissions</h3><p>In single-player, enable cheats when creating the world or temporarily open the LAN menu and enable cheats. Servers may use operator permissions.</p></article>
+</div></section>
+
+<section class="section" id="selectors"><h2>Target Selectors</h2><div class="help-grid">
+<article class="help-card"><h3>Basic selectors</h3><code class="cmd">@s — yourself
+@p — nearest player
+@a — all players
+@r — random player
+@e — all entities</code></article>
+<article class="help-card"><h3>Useful selector filters</h3><code class="cmd">@e[type=minecraft:zombie]
+@e[type=minecraft:item]
+@a[distance=..10]
+@a[name=Steve]
+@e[limit=1,sort=nearest]</code><p class="note">Exact selector arguments differ between Java and Bedrock.</p></article>
+<article class="help-card"><h3>Relative coordinates</h3><code class="cmd">~ ~ ~   current position
+~1 ~ ~   one block east
+~ ~5 ~   five blocks up
+~ ~ ~-10 ten blocks south</code></article>
+<article class="help-card"><h3>Local coordinates</h3><code class="cmd">^ ^ ^
+^ ^ ^5</code><p>Local coordinates are relative to the executor's facing direction and are especially useful for command-machine builds.</p></article>
+</div></section>
+
+<section class="section" id="movement"><h2>Teleport & Movement</h2><div class="help-grid">
+<article class="help-card"><h3>Basic teleporting</h3><code class="cmd">/tp @s 100 64 100</code><code class="cmd">/tp @a 0 80 0</code><code class="cmd">/tp @p @s</code></article>
+<article class="help-card"><h3>Teleport with rotation</h3><code class="cmd">/tp @s 100 64 100 90 0</code><p class="note">Rotation syntax varies by edition/version.</p></article>
+<article class="help-card"><h3>Spawn points</h3><code class="cmd">/setworldspawn</code><code class="cmd">/spawnpoint @s</code><code class="cmd">/spawnpoint @a 0 64 0</code></article>
+<article class="help-card"><h3>Find structures</h3><code class="cmd">/locate structure minecraft:village</code><code class="cmd">/locate structure minecraft:stronghold</code><p class="note">Structure IDs depend on edition and version.</p></article>
+</div></section>
+
+<section class="section" id="items"><h2>Items & Inventory</h2><div class="help-grid">
+<article class="help-card"><h3>Give items</h3><code class="cmd">/give @s minecraft:diamond 64</code><code class="cmd">/give @p minecraft:command_block 1</code><code class="cmd">/give @s minecraft:elytra 1</code></article>
+<article class="help-card"><h3>Clear inventory</h3><code class="cmd">/clear @s</code><code class="cmd">/clear @a minecraft:dirt</code></article>
+<article class="help-card"><h3>Popular item IDs</h3><code class="cmd">minecraft:diamond
+minecraft:netherite_ingot
+minecraft:elytra
+minecraft:totem_of_undying
+minecraft:command_block
+minecraft:barrier</code></article>
+<article class="help-card"><h3>Item troubleshooting</h3><p>If an item command fails, check spelling, edition, version, and whether your command syntax expects components, data values, or another format.</p></article>
+</div></section>
+
+<section class="section" id="players"><h2>Players & Gamemodes</h2><div class="help-grid">
+<article class="help-card"><h3>Gamemode</h3><code class="cmd">/gamemode survival @s</code><code class="cmd">/gamemode creative @s</code><code class="cmd">/gamemode adventure @s</code><code class="cmd">/gamemode spectator @s</code></article>
+<article class="help-card"><h3>Messaging</h3><code class="cmd">/say Hello!</code><code class="cmd">/tell @p Hello!</code><code class="cmd">/tellraw @a {"text":"Hello!"}</code><p class="note">Advanced text JSON differs between editions.</p></article>
+<article class="help-card"><h3>Titles</h3><code class="cmd">/title @a title {"text":"Welcome!"}</code><code class="cmd">/title @a subtitle {"text":"Aither Gaming"}</code></article>
+<article class="help-card"><h3>Experience</h3><code class="cmd">/xp 10 levels @s</code><p class="note">XP syntax varies by edition/version.</p></article>
+</div></section>
+
+<section class="section" id="effects"><h2>Effects</h2><div class="help-grid">
+<article class="help-card"><h3>Apply effects</h3><code class="cmd">/effect give @s minecraft:speed 60 1</code><code class="cmd">/effect give @s minecraft:strength 30 2</code><code class="cmd">/effect give @a minecraft:night_vision 600 0</code></article>
+<article class="help-card"><h3>Remove effects</h3><code class="cmd">/effect clear @s</code><code class="cmd">/effect clear @a minecraft:speed</code></article>
+<article class="help-card"><h3>Common effects</h3><code class="cmd">speed
+strength
+jump_boost
+regeneration
+resistance
+fire_resistance
+night_vision
+invisibility
+haste
+slow_falling</code></article>
+</div></section>
+
+<section class="section" id="world"><h2>World, Weather & Time</h2><div class="help-grid">
+<article class="help-card"><h3>Weather</h3><code class="cmd">/weather clear</code><code class="cmd">/weather rain</code><code class="cmd">/weather thunder</code></article>
+<article class="help-card"><h3>Time</h3><code class="cmd">/time set day</code><code class="cmd">/time set night</code><code class="cmd">/time set noon</code><code class="cmd">/time add 1000</code></article>
+<article class="help-card"><h3>World spawn</h3><code class="cmd">/setworldspawn</code><code class="cmd">/setworldspawn 0 64 0</code></article>
+<article class="help-card"><h3>Difficulty</h3><code class="cmd">/difficulty peaceful</code><code class="cmd">/difficulty easy</code><code class="cmd">/difficulty normal</code><code class="cmd">/difficulty hard</code></article>
+</div></section>
+
+<section class="section" id="entities"><h2>Entities & Mobs</h2><div class="help-grid">
+<article class="help-card"><h3>Summon</h3><code class="cmd">/summon minecraft:zombie ~ ~ ~</code><code class="cmd">/summon minecraft:lightning_bolt ~ ~ ~</code><code class="cmd">/summon minecraft:armor_stand ~ ~ ~</code></article>
+<article class="help-card"><h3>Kill selected entities</h3><code class="cmd">/kill @e[type=minecraft:item]</code><code class="cmd">/kill @e[type=minecraft:arrow]</code><p class="note">Be extremely careful with broad /kill selectors.</p></article>
+<article class="help-card"><h3>Mob control</h3><code class="cmd">/gamerule doMobSpawning false</code><code class="cmd">/gamerule doMobSpawning true</code></article>
+<article class="help-card"><h3>Entity selector examples</h3><code class="cmd">@e[type=minecraft:zombie,distance=..20]
+@e[type=minecraft:creeper,limit=1,sort=nearest]</code></article>
+</div></section>
+
+<section class="section" id="blocks"><h2>Blocks & Building Commands</h2><div class="help-grid">
+<article class="help-card"><h3>Set one block</h3><code class="cmd">/setblock ~ ~-1 ~ minecraft:diamond_block</code><code class="cmd">/setblock 0 64 0 minecraft:stone</code></article>
+<article class="help-card"><h3>Fill an area</h3><code class="cmd">/fill 0 64 0 10 64 10 minecraft:stone</code><code class="cmd">/fill 0 64 0 10 70 10 minecraft:air</code></article>
+<article class="help-card"><h3>Clone areas</h3><code class="cmd">/clone 0 64 0 10 70 10 20 64 20</code><p class="note">Clone syntax and modes differ by edition/version.</p></article>
+<article class="help-card"><h3>Build tip</h3><p>Use relative coordinates to make reusable command systems that work wherever the machine is moved.</p></article>
+</div></section>
+
+<section class="section" id="command-blocks"><h2>Command Blocks</h2><div class="help-grid">
+<article class="help-card"><h3>Get a command block</h3><code class="cmd">/give @s minecraft:command_block 1</code></article>
+<article class="help-card"><h3>Impulse</h3><p>Runs once when powered. Great for buttons, levers, traps, doors, and one-time actions.</p></article>
+<article class="help-card"><h3>Repeating</h3><p>Runs repeatedly while active. Useful for clocks, detection systems, timers, and continuous effects.</p></article>
+<article class="help-card"><h3>Chain</h3><p>Runs after the previous command block in a chain. Use it to build multi-step command systems.</p></article>
+<article class="help-card"><h3>Always Active</h3><p>Removes the need for a redstone power signal. Useful for repeating and chain systems.</p></article>
+<article class="help-card"><h3>Conditional</h3><p>Runs only when the preceding command block succeeds. Useful for branching command logic.</p></article>
+</div><div class="tip"><b>Safety tip:</b> Test command machines in a copy of your world first. Broad selectors such as <code>@a</code> and <code>@e</code> can affect a lot of entities.</div></section>
+
+<section class="section" id="redstone"><h2>Command Automation Ideas</h2><div class="help-grid">
+<article class="help-card"><h3>Automatic welcome</h3><p>Repeating block detects nearby players, followed by chain blocks for a title, message, and effect.</p></article>
+<article class="help-card"><h3>Mob arena</h3><p>Use <code>/summon</code>, selectors, effects, scoreboards, and conditional chains to create rounds.</p></article>
+<article class="help-card"><h3>Teleport pads</h3><p>Detect a player standing on a specific block, then teleport them to a destination.</p></article>
+<article class="help-card"><h3>Parkour checkpoints</h3><p>Combine <code>/spawnpoint</code>, coordinates, and detection commands to make checkpoints.</p></article>
+<article class="help-card"><h3>Countdowns</h3><p>Use scoreboard values and repeating/chain command blocks to display a countdown.</p></article>
+<article class="help-card"><h3>Custom shops</h3><p>Use item detection, scores, commands, and NPCs/entities to create a command-powered shop.</p></article>
+</div></section>
+
+<section class="section" id="gamerules"><h2>Gamerules</h2><div class="table-wrap"><table class="ref"><thead><tr><th>Rule</th><th>Purpose</th><th>Example</th></tr></thead><tbody>
+<tr><td><code>keepInventory</code></td><td>Keep inventory after death.</td><td><code>/gamerule keepInventory true</code></td></tr>
+<tr><td><code>doDaylightCycle</code></td><td>Control whether time advances.</td><td><code>/gamerule doDaylightCycle false</code></td></tr>
+<tr><td><code>doMobSpawning</code></td><td>Control natural mob spawning.</td><td><code>/gamerule doMobSpawning false</code></td></tr>
+<tr><td><code>doWeatherCycle</code></td><td>Control natural weather changes.</td><td><code>/gamerule doWeatherCycle false</code></td></tr>
+<tr><td><code>mobGriefing</code></td><td>Control certain mob world interactions.</td><td><code>/gamerule mobGriefing false</code></td></tr>
+<tr><td><code>commandBlockOutput</code></td><td>Control command block feedback.</td><td><code>/gamerule commandBlockOutput false</code></td></tr>
+</tbody></table></div><p class="note">Gamerule availability and names can differ by Minecraft edition and version.</p></section>
+
+<section class="section" id="java-bedrock"><h2>Java Edition vs Bedrock Edition</h2><div class="help-grid">
+<article class="help-card"><h3>Java Edition</h3><p>Java generally has extensive command, datapack, function, and technical-building capabilities. Syntax can differ significantly from Bedrock.</p><span class="note">Use the Java filter above when browsing edition-specific notes.</span></article>
+<article class="help-card"><h3>Bedrock Edition</h3><p>Bedrock runs across many platforms and has its own command syntax, selector arguments, components, and behavior.</p><span class="note">Always verify a command against your Bedrock version.</span></article>
+<article class="help-card"><h3>Why commands fail</h3><p>A command copied from a different edition or an older/newer version may be invalid even if it looks correct.</p></article>
+</div></section>
+
+<section class="section" id="generator"><h2>Quick Command Generator</h2><p>Build a few common commands without remembering the syntax.</p><div class="help-card"><div class="generator">
+<label>Command<select id="genType"><option value="tp">Teleport</option><option value="give">Give item</option><option value="effect">Effect</option><option value="summon">Summon</option><option value="weather">Weather</option><option value="time">Time</option></select></label>
+<label>Target<input id="genTarget" value="@s"></label>
+<label>Value / ID<input id="genValue" value="minecraft:diamond"></label>
+<label>Amount / Duration<input id="genAmount" value="64"></label>
+<div class="generated"><code class="cmd" id="generatedCommand">/give @s minecraft:diamond 64</code><button class="copy" id="copyGenerated">Copy command</button></div>
+</div></div></section>
+
+<section class="section" id="troubleshooting"><h2>Troubleshooting</h2><div class="help-grid">
+<article class="help-card"><h3>“Unknown command”</h3><p>Check spelling, edition, version, permissions, and whether cheats/operator access are enabled.</p></article>
+<article class="help-card"><h3>“Incorrect argument”</h3><p>Use Tab completion and <code>/help command</code>. Check every argument in the order shown by your game.</p></article>
+<article class="help-card"><h3>Command works but affects nothing</h3><p>Check the target selector, coordinates, distance, entity type, and whether the target actually exists.</p></article>
+<article class="help-card"><h3>Command block does nothing</h3><p>Check power/Always Active, command text, conditional mode, chain direction, and command-block permissions.</p></article>
+<article class="help-card"><h3>Teleport went somewhere weird</h3><p>Remember that <code>~</code> means relative coordinates. Check whether the command is executing from a player, command block, or another entity.</p></article>
+<article class="help-card"><h3>Need the exact syntax?</h3><p>Use the in-game <code>/help</code> command and Tab completion for the exact command syntax supported by your installed version.</p></article>
+</div></section>
+
+<section class="section"><h2>Quick Reference</h2><div class="help-grid">
+<article class="help-card"><h3>Most-used commands</h3><code class="cmd">/tp
+/give
+/summon
+/effect
+/gamemode
+/time
+/weather
+/setblock
+/fill
+/clone
+/locate
+/gamerule
+/kill
+/clear</code></article>
+<article class="help-card"><h3>Useful targets</h3><code class="cmd">@s  yourself
+@p  nearest player
+@a  all players
+@r  random player
+@e  entities</code></article>
+<article class="help-card"><h3>Remember</h3><p><b>Java ≠ Bedrock.</b> Minecraft commands are powerful, but exact syntax depends on your edition and version. When in doubt, check the game's own command help.</p></article>
+</div></section>
 </main><footer><span>© Aither Forge • Aither Gaming</span></footer>
-<script>const b=document.getElementById('themeButton');if(localStorage.getItem('aither-theme')==='light')document.body.classList.add('light');b.onclick=()=>{document.body.classList.toggle('light');localStorage.setItem('aither-theme',document.body.classList.contains('light')?'light':'dark')};</script>
+<script>
+const b=document.getElementById('themeButton');if(localStorage.getItem('aither-theme')==='light')document.body.classList.add('light');b.onclick=()=>{document.body.classList.toggle('light');localStorage.setItem('aither-theme',document.body.classList.contains('light')?'light':'dark')};
+const search=document.getElementById('search');search.oninput=()=>{const q=search.value.toLowerCase().trim();document.querySelectorAll('.section').forEach(s=>s.classList.toggle('hidden',q&&!s.innerText.toLowerCase().includes(q)))};
+document.querySelectorAll('.edition').forEach(btn=>btn.onclick=()=>{document.querySelectorAll('.edition').forEach(x=>x.classList.remove('active'));btn.classList.add('active')});
+const type=document.getElementById('genType'),target=document.getElementById('genTarget'),value=document.getElementById('genValue'),amount=document.getElementById('genAmount'),out=document.getElementById('generatedCommand');
+function generate(){let t=type.value,a=target.value||'@s',v=value.value||'minecraft:diamond',n=amount.value||'1',c='';if(t==='tp')c=`/tp ${a} 100 64 100`;if(t==='give')c=`/give ${a} ${v} ${n}`;if(t==='effect')c=`/effect give ${a} ${v} ${n} 1`;if(t==='summon')c=`/summon ${v} ~ ~ ~`;if(t==='weather')c=`/weather ${v||'clear'}`;if(t==='time')c=`/time set ${v||'day'}`;out.textContent=c} [type,target,value,amount].forEach(x=>x.addEventListener('input',generate));type.onchange=generate;document.getElementById('copyGenerated').onclick=()=>navigator.clipboard?.writeText(out.textContent);
+</script>
 </body></html>
