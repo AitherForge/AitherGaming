@@ -49,7 +49,7 @@ jobs:
             echo "Google Drive access test attempt $attempt/5..."
             rm -rf /tmp/ugs-drive-access-test
             mkdir -p /tmp/ugs-drive-access-test
-            if gdown "$DRIVE_URL" --folder -O /tmp/ugs-drive-access-test; then
+            if gdown "$DRIVE_URL" -O /tmp/ugs-drive-access-test; then
               file_count=$(find /tmp/ugs-drive-access-test -type f | wc -l)
               if [ "$file_count" -gt 0 ]; then
                 echo "Google Drive folder is accessible to this GitHub Actions runner."
@@ -74,7 +74,7 @@ jobs:
             echo "UGS Google Drive download attempt $attempt/5..."
             rm -rf /tmp/ugs-drive
             mkdir -p /tmp/ugs-drive
-            if gdown "$DRIVE_URL" --folder -O /tmp/ugs-drive; then
+            if gdown "$DRIVE_URL" -O /tmp/ugs-drive; then
               success=1
               break
             fi
