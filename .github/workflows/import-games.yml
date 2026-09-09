@@ -40,42 +40,25 @@ jobs:
           echo "Unable to install import tools after 5 attempts."
           exit 1
 
-      - name: Preflight Google Drive access
+      - name: Test Google Drive access
         shell: bash
         run: |
           set -euo pipefail
           DRIVE_URL="https://drive.google.com/drive/folders/1ou3mI5xJVQv8Vt_MvwejPtf7zStSnU-s"
-          access_ok=0
           for attempt in 1 2 3 4 5; do
-            echo "UGS Google Drive access preflight attempt $attempt/5..."
-            rm -f /tmp/ugs-drive-list.json
-            if gdown "$DRIVE_URL" --folder --json --quiet > /tmp/ugs-drive-list.json; then
-              entry_count=$(python3 - <<'PY'
-import json
-from pathlib import Path
-path = Path('/tmp/ugs-drive-list.json')
-data = json.loads(path.read_text(encoding='utf-8'))
-print(len(data) if isinstance(data, list) else 0)
-PY
-)
-              echo "Google Drive folder is accessible to this GitHub runner."
-              echo "Google Drive entries visible: $entry_count"
-              if [ "$entry_count" -gt 0 ]; then
-                access_ok=1
-                break
-              fi
-              echo "The folder was reachable, but no downloadable entries were visible."
-            else
-              echo "Google Drive access failed."
-              echo "If this folder is restricted to a school/work Google account, GitHub Actions cannot use that signed-in account automatically."
+            echo "Google Drive access test attempt $attempt/5..."
+            if gdown "$DRIVE_URL" --folder --remaining-ok --fuzzy -O /tmp/ugs-drive-access-test; then
+              echo "Google Drive folder is accessible to this GitHub Actions runner."
+              rm -rf /tmp/ugs-drive-access-test
+              exit 0
             fi
+            rm -rf /tmp/ugs-drive-access-test
             if [ "$attempt" -lt 5 ]; then sleep $((attempt * 10)); fi
           done
-          if [ "$access_ok" -ne 1 ]; then
-            echo "ERROR: Google Drive preflight failed after 5 attempts."
-            echo "The UGS folder must be accessible without a personal/school browser login (normally 'Anyone with the link' as Viewer), or the workflow needs authenticated Google Drive credentials stored as GitHub Actions secrets."
-            exit 1
-          fi
+          echo "ERROR: GitHub Actions cannot access the Google Drive folder."
+          echo "If this folder is restricted to a school/work Google account, GitHub Actions cannot use that account automatically."
+          echo "Make the folder accessible to anyone with the link, or use an authenticated service-account workflow."
+          exit 1
 
       - name: Download 200 UGS games from Google Drive
         shell: bash
@@ -87,7 +70,7 @@ PY
             echo "UGS Google Drive download attempt $attempt/5..."
             rm -rf /tmp/ugs-drive
             mkdir -p /tmp/ugs-drive
-            if gdown "$DRIVE_URL" -O /tmp/ugs-drive --folder; then
+            if gdown "$DRIVE_URL" --folder -O /tmp/ugs-drive; then
               success=1
               break
             fi
@@ -105,7 +88,7 @@ PY
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf /tmp/ugs /tmp/eaglercraft-extras /tmp/aa
+          rm -rf /tmp/ugs /tmp/eaglercraft-extras /tmp/aa /tmp/shrimpy-game-box
 
           clone_with_retry() {
             local url="$1"
@@ -125,6 +108,7 @@ PY
           clone_with_retry https://github.com/bubbls/UGS-Assets.git /tmp/ugs
           clone_with_retry https://github.com/x8rr/Eaglercraft-Extras.git /tmp/eaglercraft-extras
           clone_with_retry https://github.com/aa-gamerz22/aa-gamerz-games.git /tmp/aa
+          clone_with_retry https://github.com/Shrimpy-com/Shrimpy-Game-Box.git /tmp/shrimpy-game-box
 
       - name: Import Drive games and every usable GitHub game
         shell: bash
@@ -132,7 +116,7 @@ PY
           set -euo pipefail
           for attempt in 1 2 3 4 5; do
             echo "Import attempt $attempt/5..."
-            if python3 scripts/import_games.py /tmp/ugs-drive /tmp/ugs /tmp/eaglercraft-extras /tmp/aa; then
+            if python3 scripts/import_games.py /tmp/ugs-drive /tmp/ugs /tmp/eaglercraft-extras /tmp/aa /tmp/shrimpy-game-box; then
               test -d games
               folders=$(find games -mindepth 1 -maxdepth 1 -type d | wc -l)
               indexes=$(find games -mindepth 2 -maxdepth 2 -name index.html -type f | wc -l)
