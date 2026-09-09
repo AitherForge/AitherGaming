@@ -30,27 +30,34 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 -m pip install --disable-pip-version-check --no-input --upgrade gdown
-          gdown --version
+          for attempt in 1 2 3 4 5; do
+            echo "Installing import tools (attempt $attempt/5)..."
+            if python3 -m pip install --disable-pip-version-check --no-input --upgrade gdown && gdown --version; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 5 ]; then sleep $((attempt * 10)); fi
+          done
+          echo "Unable to install import tools after 5 attempts."
+          exit 1
 
-      - name: Download 100 UGS games from Google Drive
+      - name: Download 200 UGS games from Google Drive
         shell: bash
         run: |
           set -euo pipefail
           DRIVE_URL="https://drive.google.com/drive/folders/1ou3mI5xJVQv8Vt_MvwejPtf7zStSnU-s"
           success=0
-          for attempt in 1 2 3; do
-            echo "UGS Google Drive download attempt $attempt/3..."
+          for attempt in 1 2 3 4 5; do
+            echo "UGS Google Drive download attempt $attempt/5..."
             rm -rf /tmp/ugs-drive
             mkdir -p /tmp/ugs-drive
             if gdown "$DRIVE_URL" -O /tmp/ugs-drive --folder; then
               success=1
               break
             fi
-            sleep $((attempt * 10))
+            if [ "$attempt" -lt 5 ]; then sleep $((attempt * 10)); fi
           done
           if [ "$success" -ne 1 ]; then
-            echo "UGS Google Drive download failed after 3 attempts."
+            echo "UGS Google Drive download failed after 5 attempts."
             exit 1
           fi
           file_count=$(find /tmp/ugs-drive -type f | wc -l)
@@ -66,15 +73,15 @@ jobs:
           clone_with_retry() {
             local url="$1"
             local destination="$2"
-            for attempt in 1 2 3; do
-              echo "Cloning $url (attempt $attempt/3)..."
+            for attempt in 1 2 3 4 5; do
+              echo "Cloning $url (attempt $attempt/5)..."
               rm -rf "$destination"
               if git clone --depth 1 --no-tags "$url" "$destination"; then
                 return 0
               fi
-              sleep $((attempt * 10))
+              if [ "$attempt" -lt 5 ]; then sleep $((attempt * 10)); fi
             done
-            echo "Unable to clone $url after 3 attempts."
+            echo "Unable to clone $url after 5 attempts."
             return 1
           }
 
@@ -86,37 +93,50 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 scripts/import_games.py /tmp/ugs-drive /tmp/ugs /tmp/eaglercraft-extras /tmp/aa
-          test -d games
-          folders=$(find games -mindepth 1 -maxdepth 1 -type d | wc -l)
-          indexes=$(find games -mindepth 2 -maxdepth 2 -name index.html -type f | wc -l)
-          drive_count=$(grep -c 'UGS Google Drive' games.json || true)
-          echo "Total game folders including AI Originals: $folders"
-          echo "Total playable entry points including AI Originals: $indexes"
-          echo "UGS Drive games in manifest: $drive_count"
-          test "$folders" -gt 0
-          test "$indexes" -gt 0
-          test "$drive_count" -eq 100
-          test -s games.json
-          test -s CREDITS.md
+          for attempt in 1 2 3 4 5; do
+            echo "Import attempt $attempt/5..."
+            if python3 scripts/import_games.py /tmp/ugs-drive /tmp/ugs /tmp/eaglercraft-extras /tmp/aa; then
+              test -d games
+              folders=$(find games -mindepth 1 -maxdepth 1 -type d | wc -l)
+              indexes=$(find games -mindepth 2 -maxdepth 2 -name index.html -type f | wc -l)
+              drive_count=$(grep -c 'UGS Google Drive' games.json || true)
+              echo "Total game folders including AI Originals: $folders"
+              echo "Total playable entry points including AI Originals: $indexes"
+              echo "UGS Drive games in manifest: $drive_count"
+              test "$folders" -gt 0
+              test "$indexes" -gt 0
+              test "$drive_count" -eq 200
+              test -s games.json
+              test -s CREDITS.md
+              exit 0
+            fi
+            if [ "$attempt" -lt 5 ]; then sleep $((attempt * 10)); fi
+          done
+          echo "Import failed after 5 attempts."
+          exit 1
 
       - name: Verify files are safe for GitHub
         shell: bash
         run: |
           set -euo pipefail
-          bad=0
-          while IFS= read -r -d '' file; do
-            size=$(stat -c '%s' "$file")
-            if [ "$size" -ge 100000000 ]; then
-              echo "ERROR: file is too large for GitHub: $file ($size bytes)"
-              bad=1
+          for attempt in 1 2 3 4 5; do
+            echo "GitHub safety verification attempt $attempt/5..."
+            bad=0
+            while IFS= read -r -d '' file; do
+              size=$(stat -c '%s' "$file")
+              if [ "$size" -ge 100000000 ]; then
+                echo "ERROR: file is too large for GitHub: $file ($size bytes)"
+                bad=1
+              fi
+            done < <(find games -type f -print0)
+            if [ "$bad" -eq 0 ]; then
+              echo "All imported files are below GitHub's per-file limit."
+              exit 0
             fi
-          done < <(find games -type f -print0)
-          if [ "$bad" -ne 0 ]; then
-            echo "The importer must skip oversized games before this step."
-            exit 1
-          fi
-          echo "All imported files are below GitHub's per-file limit."
+            if [ "$attempt" -lt 5 ]; then sleep $((attempt * 10)); fi
+          done
+          echo "GitHub safety verification failed after 5 attempts."
+          exit 1
 
       - name: Commit and push imported game files
         shell: bash
@@ -156,7 +176,7 @@ jobs:
                 exit 0
               fi
             fi
-            sleep $((attempt * 10))
+            if [ "$attempt" -lt 5 ]; then sleep $((attempt * 10)); fi
           done
 
           echo "Unable to push imported games after 5 attempts."
