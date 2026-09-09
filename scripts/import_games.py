@@ -12,7 +12,7 @@ AA = Path(sys.argv[4])
 OUT = ROOT / "games"
 AI_PREFIX = "ai-"
 MAX_FILE_BYTES = 90 * 1024 * 1024
-
+DRIVE_GAME_LIMIT = 200
 
 def discover_game_roots(root: Path):
     candidates = []
@@ -29,10 +29,8 @@ def discover_game_roots(root: Path):
         roots.append(candidate)
     return sorted(roots, key=lambda p: str(p).lower())
 
-
 def slugify(name: str):
     return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
-
 
 def is_probable_local_game(root: Path):
     entry = root / "index.html"
@@ -54,7 +52,6 @@ def is_probable_local_game(root: Path):
         return False
     return True
 
-
 def collect(roots, source, used_slugs, used_names, limit=None):
     selected = []
     for source_root in roots:
@@ -70,7 +67,6 @@ def collect(roots, source, used_slugs, used_names, limit=None):
             break
     return selected
 
-
 # Preserve Aither AI Originals across every external refresh.
 ai_backup = ROOT / ".ai-games-backup"
 if ai_backup.exists():
@@ -81,7 +77,7 @@ if OUT.exists():
             ai_backup.mkdir(exist_ok=True)
             shutil.copytree(child, ai_backup / child.name)
 
-# Drive contributes exactly 100 usable games; GitHub collections contribute every usable game.
+# Drive contributes exactly 200 usable games; GitHub collections contribute every usable game.
 drive_roots = [root for root in discover_game_roots(DRIVE) if is_probable_local_game(root)]
 ugs_roots = [root for root in discover_game_roots(UGS) if is_probable_local_game(root)]
 eagler_roots = [root for root in discover_game_roots(EAGLERCRAFT) if is_probable_local_game(root)]
@@ -96,9 +92,9 @@ used_slugs = set()
 used_names = set()
 selected = []
 
-drive_selected = collect(drive_roots, "UGS Google Drive", used_slugs, used_names, limit=100)
-if len(drive_selected) < 100:
-    raise SystemExit(f"UGS Google Drive only provided {len(drive_selected)} usable games; 100 are required.")
+drive_selected = collect(drive_roots, "UGS Google Drive", used_slugs, used_names, limit=DRIVE_GAME_LIMIT)
+if len(drive_selected) < DRIVE_GAME_LIMIT:
+    raise SystemExit(f"UGS Google Drive only provided {len(drive_selected)} usable games; {DRIVE_GAME_LIMIT} are required.")
 selected.extend(drive_selected)
 selected.extend(collect(ugs_roots, "UGS-Assets", used_slugs, used_names))
 selected.extend(collect(eagler_roots, "Eaglercraft Extras", used_slugs, used_names))
