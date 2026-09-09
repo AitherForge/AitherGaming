@@ -47,12 +47,16 @@ jobs:
           DRIVE_URL="https://drive.google.com/drive/folders/1ou3mI5xJVQv8Vt_MvwejPtf7zStSnU-s"
           for attempt in 1 2 3 4 5; do
             echo "Google Drive access test attempt $attempt/5..."
-            if gdown "$DRIVE_URL" --folder --remaining-ok --fuzzy -O /tmp/ugs-drive-access-test; then
-              echo "Google Drive folder is accessible to this GitHub Actions runner."
-              rm -rf /tmp/ugs-drive-access-test
-              exit 0
-            fi
             rm -rf /tmp/ugs-drive-access-test
+            mkdir -p /tmp/ugs-drive-access-test
+            if gdown "$DRIVE_URL" --folder -O /tmp/ugs-drive-access-test; then
+              file_count=$(find /tmp/ugs-drive-access-test -type f | wc -l)
+              if [ "$file_count" -gt 0 ]; then
+                echo "Google Drive folder is accessible to this GitHub Actions runner."
+                rm -rf /tmp/ugs-drive-access-test
+                exit 0
+              fi
+            fi
             if [ "$attempt" -lt 5 ]; then sleep $((attempt * 10)); fi
           done
           echo "ERROR: GitHub Actions cannot access the Google Drive folder."
