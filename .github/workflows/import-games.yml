@@ -1,5 +1,6 @@
 name: Import Aither Gaming
 
+# TEMPORARY: GitHub-only game import. Google Drive is intentionally disabled for this run.
 on:
   workflow_dispatch:
   push:
@@ -26,73 +27,11 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Install import tools
+      - name: Clone all temporary GitHub game collections
         shell: bash
         run: |
           set -euo pipefail
-          for attempt in 1 2 3 4 5; do
-            echo "Installing import tools (attempt $attempt/5)..."
-            if python3 -m pip install --disable-pip-version-check --no-input --upgrade gdown && gdown --version; then
-              exit 0
-            fi
-            if [ "$attempt" -lt 5 ]; then sleep $((attempt * 10)); fi
-          done
-          echo "Unable to install import tools after 5 attempts."
-          exit 1
-
-      - name: Test Google Drive access
-        shell: bash
-        run: |
-          set -euo pipefail
-          DRIVE_URL="https://drive.google.com/drive/folders/1ou3mI5xJVQv8Vt_MvwejPtf7zStSnU-s"
-          for attempt in 1 2 3 4 5; do
-            echo "Google Drive access test attempt $attempt/5..."
-            rm -rf /tmp/ugs-drive-access-test
-            mkdir -p /tmp/ugs-drive-access-test
-            if gdown "$DRIVE_URL" -O /tmp/ugs-drive-access-test; then
-              file_count=$(find /tmp/ugs-drive-access-test -type f | wc -l)
-              if [ "$file_count" -gt 0 ]; then
-                echo "Google Drive folder is accessible to this GitHub Actions runner."
-                rm -rf /tmp/ugs-drive-access-test
-                exit 0
-              fi
-            fi
-            if [ "$attempt" -lt 5 ]; then sleep $((attempt * 10)); fi
-          done
-          echo "ERROR: GitHub Actions cannot access the Google Drive folder."
-          echo "If this folder is restricted to a school/work Google account, GitHub Actions cannot use that account automatically."
-          echo "Make the folder accessible to anyone with the link, or use an authenticated service-account workflow."
-          exit 1
-
-      - name: Download 200 UGS games from Google Drive
-        shell: bash
-        run: |
-          set -euo pipefail
-          DRIVE_URL="https://drive.google.com/drive/folders/1ou3mI5xJVQv8Vt_MvwejPtf7zStSnU-s"
-          success=0
-          for attempt in 1 2 3 4 5; do
-            echo "UGS Google Drive download attempt $attempt/5..."
-            rm -rf /tmp/ugs-drive
-            mkdir -p /tmp/ugs-drive
-            if gdown "$DRIVE_URL" -O /tmp/ugs-drive; then
-              success=1
-              break
-            fi
-            if [ "$attempt" -lt 5 ]; then sleep $((attempt * 10)); fi
-          done
-          if [ "$success" -ne 1 ]; then
-            echo "UGS Google Drive download failed after 5 attempts."
-            exit 1
-          fi
-          file_count=$(find /tmp/ugs-drive -type f | wc -l)
-          echo "Downloaded UGS Drive files: $file_count"
-          test "$file_count" -gt 0
-
-      - name: Clone all GitHub game collections
-        shell: bash
-        run: |
-          set -euo pipefail
-          rm -rf /tmp/ugs /tmp/eaglercraft-extras /tmp/aa /tmp/shrimpy-game-box
+          rm -rf /tmp/ugs /tmp/eaglercraft-extras /tmp/aa /tmp/shrimpy-game-box /tmp/jsgames /tmp/html-minigames /tmp/classic-games-collection
 
           clone_with_retry() {
             local url="$1"
@@ -109,35 +48,42 @@ jobs:
             return 1
           }
 
+          # Previously selected collections.
           clone_with_retry https://github.com/bubbls/UGS-Assets.git /tmp/ugs
           clone_with_retry https://github.com/x8rr/Eaglercraft-Extras.git /tmp/eaglercraft-extras
           clone_with_retry https://github.com/aa-gamerz22/aa-gamerz-games.git /tmp/aa
           clone_with_retry https://github.com/Shrimpy-com/Shrimpy-Game-Box.git /tmp/shrimpy-game-box
 
-      - name: Import Drive games and every usable GitHub game
+          # Three additional temporary collections.
+          clone_with_retry https://github.com/mariohd/JSGames.git /tmp/jsgames
+          clone_with_retry https://github.com/Rysm/html-minigames.git /tmp/html-minigames
+          clone_with_retry https://github.com/stphung/classic-games-collection.git /tmp/classic-games-collection
+
+      - name: Import every usable GitHub game
         shell: bash
         run: |
           set -euo pipefail
           for attempt in 1 2 3 4 5; do
-            echo "Import attempt $attempt/5..."
-            if python3 scripts/import_games.py /tmp/ugs-drive /tmp/ugs /tmp/eaglercraft-extras /tmp/aa /tmp/shrimpy-game-box; then
+            echo "GitHub-only import attempt $attempt/5..."
+            if python3 scripts/import_games.py /tmp/ugs /tmp/eaglercraft-extras /tmp/aa /tmp/shrimpy-game-box /tmp/jsgames /tmp/html-minigames /tmp/classic-games-collection; then
               test -d games
               folders=$(find games -mindepth 1 -maxdepth 1 -type d | wc -l)
               indexes=$(find games -mindepth 2 -maxdepth 2 -name index.html -type f | wc -l)
-              drive_count=$(grep -c 'UGS Google Drive' games.json || true)
               echo "Total game folders including AI Originals: $folders"
               echo "Total playable entry points including AI Originals: $indexes"
-              echo "UGS Drive games in manifest: $drive_count"
               test "$folders" -gt 0
               test "$indexes" -gt 0
-              test "$drive_count" -eq 200
               test -s games.json
               test -s CREDITS.md
+              if grep -q 'UGS Google Drive' games.json; then
+                echo "ERROR: Google Drive games were imported during the temporary GitHub-only run."
+                exit 1
+              fi
               exit 0
             fi
             if [ "$attempt" -lt 5 ]; then sleep $((attempt * 10)); fi
           done
-          echo "Import failed after 5 attempts."
+          echo "GitHub-only import failed after 5 attempts."
           exit 1
 
       - name: Verify files are safe for GitHub
@@ -183,7 +129,7 @@ jobs:
 
           echo "Staged file count: $(git diff --cached --name-only | wc -l)"
           echo "Creating import commit..."
-          git commit --no-verify -m "Import Aither Gaming game collections"
+          git commit --no-verify -m "Temporarily import GitHub game collections"
 
           for attempt in 1 2 3 4 5; do
             echo "Push attempt $attempt/5..."
