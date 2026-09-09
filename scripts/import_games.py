@@ -5,15 +5,16 @@ import sys
 from pathlib import Path
 
 ROOT = Path.cwd()
-DRIVE = Path(sys.argv[1])
-UGS = Path(sys.argv[2])
-EAGLERCRAFT = Path(sys.argv[3])
-AA = Path(sys.argv[4])
-SHRIMPY = Path(sys.argv[5])
+UGS = Path(sys.argv[1])
+EAGLERCRAFT = Path(sys.argv[2])
+AA = Path(sys.argv[3])
+SHRIMPY = Path(sys.argv[4])
+JSGAMES = Path(sys.argv[5])
+HTML_MINIGAMES = Path(sys.argv[6])
+CLASSIC_GAMES = Path(sys.argv[7])
 OUT = ROOT / "games"
 AI_PREFIX = "ai-"
 MAX_FILE_BYTES = 90 * 1024 * 1024
-DRIVE_GAME_LIMIT = 200
 
 def discover_game_roots(root: Path):
     candidates = []
@@ -53,7 +54,7 @@ def is_probable_local_game(root: Path):
         return False
     return True
 
-def collect(roots, source, used_slugs, used_names, limit=None):
+def collect(roots, source, used_slugs, used_names):
     selected = []
     for source_root in roots:
         name = source_root.name.strip()
@@ -64,11 +65,9 @@ def collect(roots, source, used_slugs, used_names, limit=None):
         selected.append((name, slug, source, source_root))
         used_slugs.add(slug)
         used_names.add(normalized_name)
-        if limit and len(selected) >= limit:
-            break
     return selected
 
-# Preserve Aither AI Originals across every external refresh.
+# Preserve Aither AI Originals across this temporary external refresh.
 ai_backup = ROOT / ".ai-games-backup"
 if ai_backup.exists():
     shutil.rmtree(ai_backup)
@@ -78,34 +77,36 @@ if OUT.exists():
             ai_backup.mkdir(exist_ok=True)
             shutil.copytree(child, ai_backup / child.name)
 
-# Drive contributes exactly 200 usable games; every usable game from each GitHub collection is imported.
-drive_roots = [root for root in discover_game_roots(DRIVE) if is_probable_local_game(root)]
+# TEMPORARY: GitHub-only import. Google Drive is intentionally excluded for this run.
 ugs_roots = [root for root in discover_game_roots(UGS) if is_probable_local_game(root)]
 eagler_roots = [root for root in discover_game_roots(EAGLERCRAFT) if is_probable_local_game(root)]
 aa_roots = [root for root in discover_game_roots(AA) if is_probable_local_game(root)]
 shrimpy_roots = [root for root in discover_game_roots(SHRIMPY) if is_probable_local_game(root)]
+jsgames_roots = [root for root in discover_game_roots(JSGAMES) if is_probable_local_game(root)]
+html_minigames_roots = [root for root in discover_game_roots(HTML_MINIGAMES) if is_probable_local_game(root)]
+classic_games_roots = [root for root in discover_game_roots(CLASSIC_GAMES) if is_probable_local_game(root)]
 
-print(f"UGS Google Drive usable games: {len(drive_roots)}")
 print(f"UGS-Assets usable GitHub games: {len(ugs_roots)}")
 print(f"Eaglercraft Extras usable GitHub games: {len(eagler_roots)}")
 print(f"AA Gamerz usable GitHub games: {len(aa_roots)}")
 print(f"Shrimpy Game Box usable GitHub games: {len(shrimpy_roots)}")
+print(f"JSGames usable GitHub games: {len(jsgames_roots)}")
+print(f"html-minigames usable GitHub games: {len(html_minigames_roots)}")
+print(f"Classic Games Collection usable GitHub games: {len(classic_games_roots)}")
 
 used_slugs = set()
 used_names = set()
 selected = []
-
-drive_selected = collect(drive_roots, "UGS Google Drive", used_slugs, used_names, limit=DRIVE_GAME_LIMIT)
-if len(drive_selected) < DRIVE_GAME_LIMIT:
-    raise SystemExit(f"UGS Google Drive only provided {len(drive_selected)} usable games; {DRIVE_GAME_LIMIT} are required.")
-selected.extend(drive_selected)
 selected.extend(collect(ugs_roots, "UGS-Assets", used_slugs, used_names))
 selected.extend(collect(eagler_roots, "Eaglercraft Extras", used_slugs, used_names))
 selected.extend(collect(aa_roots, "AA Gamerz", used_slugs, used_names))
 selected.extend(collect(shrimpy_roots, "Shrimpy Game Box", used_slugs, used_names))
+selected.extend(collect(jsgames_roots, "JSGames", used_slugs, used_names))
+selected.extend(collect(html_minigames_roots, "html-minigames", used_slugs, used_names))
+selected.extend(collect(classic_games_roots, "Classic Games Collection", used_slugs, used_names))
 
 if not selected:
-    raise SystemExit("No usable external game folders were found.")
+    raise SystemExit("No usable GitHub game folders were found.")
 
 if OUT.exists():
     shutil.rmtree(OUT)
@@ -116,7 +117,7 @@ metadata = []
 credits = [
     "# Aither Gaming Credits",
     "",
-    "External games are imported as local files for the Aither Gaming library. Source attribution is retained here.",
+    "TEMPORARY IMPORT: These games are imported from GitHub collections only. Google Drive is disabled for this run.",
     "",
 ]
 source_counts = {}
@@ -130,7 +131,7 @@ for i, (name, slug, source, source_root) in enumerate(selected, 1):
     metadata.append({
         "name": name,
         "icon": icons[(i - 1) % len(icons)],
-        "category": "UGS Google Drive" if source == "UGS Google Drive" else "GitHub Collections",
+        "category": "GitHub Collections",
         "source": source,
         "path": f"games/{slug}",
     })
@@ -161,6 +162,6 @@ credits.append(f"- Aither AI Originals: {ai_count}")
 
 (ROOT / "games.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 (ROOT / "CREDITS.md").write_text("\n".join(credits) + "\n", encoding="utf-8")
-print(f"Imported {len(selected)} external game folders + {ai_count} Aither AI Originals")
+print(f"Imported {len(selected)} external GitHub game folders + {ai_count} Aither AI Originals")
 for source, count in source_counts.items():
     print(f"  {source}: {count}")
