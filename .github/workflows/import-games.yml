@@ -40,6 +40,43 @@ jobs:
           echo "Unable to install import tools after 5 attempts."
           exit 1
 
+      - name: Preflight Google Drive access
+        shell: bash
+        run: |
+          set -euo pipefail
+          DRIVE_URL="https://drive.google.com/drive/folders/1ou3mI5xJVQv8Vt_MvwejPtf7zStSnU-s"
+          access_ok=0
+          for attempt in 1 2 3 4 5; do
+            echo "UGS Google Drive access preflight attempt $attempt/5..."
+            rm -f /tmp/ugs-drive-list.json
+            if gdown "$DRIVE_URL" --folder --json --quiet > /tmp/ugs-drive-list.json; then
+              entry_count=$(python3 - <<'PY'
+import json
+from pathlib import Path
+path = Path('/tmp/ugs-drive-list.json')
+data = json.loads(path.read_text(encoding='utf-8'))
+print(len(data) if isinstance(data, list) else 0)
+PY
+)
+              echo "Google Drive folder is accessible to this GitHub runner."
+              echo "Google Drive entries visible: $entry_count"
+              if [ "$entry_count" -gt 0 ]; then
+                access_ok=1
+                break
+              fi
+              echo "The folder was reachable, but no downloadable entries were visible."
+            else
+              echo "Google Drive access failed."
+              echo "If this folder is restricted to a school/work Google account, GitHub Actions cannot use that signed-in account automatically."
+            fi
+            if [ "$attempt" -lt 5 ]; then sleep $((attempt * 10)); fi
+          done
+          if [ "$access_ok" -ne 1 ]; then
+            echo "ERROR: Google Drive preflight failed after 5 attempts."
+            echo "The UGS folder must be accessible without a personal/school browser login (normally 'Anyone with the link' as Viewer), or the workflow needs authenticated Google Drive credentials stored as GitHub Actions secrets."
+            exit 1
+          fi
+
       - name: Download 200 UGS games from Google Drive
         shell: bash
         run: |
@@ -50,7 +87,7 @@ jobs:
             echo "UGS Google Drive download attempt $attempt/5..."
             rm -rf /tmp/ugs-drive
             mkdir -p /tmp/ugs-drive
-            if gdown "$DRIVE_URL" -O /tmp/ugs-drive; then
+            if gdown "$DRIVE_URL" -O /tmp/ugs-drive --folder; then
               success=1
               break
             fi
