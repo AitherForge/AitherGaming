@@ -48,13 +48,10 @@ jobs:
             return 1
           }
 
-          # Previously selected collections.
           clone_with_retry https://github.com/bubbls/UGS-Assets.git /tmp/ugs
           clone_with_retry https://github.com/x8rr/Eaglercraft-Extras.git /tmp/eaglercraft-extras
           clone_with_retry https://github.com/aa-gamerz22/aa-gamerz-games.git /tmp/aa
           clone_with_retry https://github.com/Shrimpy-com/Shrimpy-Game-Box.git /tmp/shrimpy-game-box
-
-          # Three additional temporary collections.
           clone_with_retry https://github.com/mariohd/JSGames.git /tmp/jsgames
           clone_with_retry https://github.com/Rysm/html-minigames.git /tmp/html-minigames
           clone_with_retry https://github.com/stphung/classic-games-collection.git /tmp/classic-games-collection
@@ -118,13 +115,35 @@ jobs:
           git config core.compression 0
           git config http.version HTTP/1.1
 
+          # Imported repositories must never become Git submodules/nested repositories.
+          # Remove stale Git metadata that may have survived an earlier failed import.
+          echo "Removing stale nested Git metadata..."
+          find games -type d -name .git -prune -exec rm -rf {} + 2>/dev/null || true
+          find games -type f \( -name .gitmodules -o -name .gitignore -o -name .gitattributes \) -delete 2>/dev/null || true
+
+          # Clear the tracked games index and re-stage the clean imported tree. This also
+          # removes any old 160000 gitlink entries left by the failed importer.
+          git rm -r --cached --ignore-unmatch games >/dev/null 2>&1 || true
+
+          # Rebase onto the current main before creating the import commit so a concurrent
+          # repository change cannot make the push non-fast-forward.
+          git fetch origin main
+          git rebase origin/main
+
           echo "Staging imported game files..."
-          git add games games.json CREDITS.md
+          git add -A games games.json CREDITS.md
           git status --short
 
           if git diff --cached --quiet; then
             echo "No game changes to commit."
             exit 0
+          fi
+
+          echo "Checking for nested Git links before commit..."
+          if git diff --cached --raw | grep -q '160000'; then
+            echo "ERROR: a nested Git submodule entry is still staged."
+            git diff --cached --raw | grep '160000' || true
+            exit 1
           fi
 
           echo "Staged file count: $(git diff --cached --name-only | wc -l)"
@@ -134,18 +153,13 @@ jobs:
           for attempt in 1 2 3 4 5; do
             echo "Push attempt $attempt/5..."
             git fetch origin main
-            if git merge-base --is-ancestor origin/main HEAD; then
-              if git push origin HEAD:main; then
-                echo "Game import pushed successfully."
-                exit 0
-              fi
-            else
-              echo "main changed while the import was running. Rebuilding the commit on top of origin/main."
+            if ! git merge-base --is-ancestor origin/main HEAD; then
+              echo "main changed while the import was running; rebasing before retry."
               git rebase origin/main
-              if git push origin HEAD:main; then
-                echo "Game import pushed successfully after rebase."
-                exit 0
-              fi
+            fi
+            if git push origin HEAD:main; then
+              echo "Game import pushed successfully."
+              exit 0
             fi
             if [ "$attempt" -lt 5 ]; then sleep $((attempt * 10)); fi
           done
