@@ -16,6 +16,7 @@ OUT = ROOT / "games"
 AI_PREFIX = "ai-"
 MAX_FILE_BYTES = 90 * 1024 * 1024
 
+
 def discover_game_roots(root: Path):
     candidates = []
     for index in root.rglob("index.html"):
@@ -31,8 +32,10 @@ def discover_game_roots(root: Path):
         roots.append(candidate)
     return sorted(roots, key=lambda p: str(p).lower())
 
+
 def slugify(name: str):
     return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+
 
 def is_probable_local_game(root: Path):
     entry = root / "index.html"
@@ -54,6 +57,7 @@ def is_probable_local_game(root: Path):
         return False
     return True
 
+
 def collect(roots, source, used_slugs, used_names):
     selected = []
     for source_root in roots:
@@ -66,6 +70,17 @@ def collect(roots, source, used_slugs, used_names):
         used_slugs.add(slug)
         used_names.add(normalized_name)
     return selected
+
+
+def copy_game_without_git(source_root: Path, destination: Path):
+    """Copy a game while stripping nested Git/submodule metadata."""
+    ignored_names = {".git", ".gitmodules", ".gitignore", ".gitattributes"}
+
+    def ignore(_directory, names):
+        return [name for name in names if name in ignored_names]
+
+    shutil.copytree(source_root, destination, symlinks=False, ignore=ignore)
+
 
 # Preserve Aither AI Originals across this temporary external refresh.
 ai_backup = ROOT / ".ai-games-backup"
@@ -124,7 +139,7 @@ source_counts = {}
 
 for i, (name, slug, source, source_root) in enumerate(selected, 1):
     destination = OUT / slug
-    shutil.copytree(source_root, destination, symlinks=True)
+    copy_game_without_git(source_root, destination)
     entry = destination / "index.html"
     if not entry.is_file() or entry.stat().st_size == 0:
         raise SystemExit(f"Invalid local game entry point after copying: {name}")
@@ -143,7 +158,7 @@ ai_count = 0
 if ai_backup.exists():
     for child in sorted(ai_backup.iterdir()):
         if child.is_dir() and child.name.startswith(AI_PREFIX) and (child / "index.html").is_file():
-            shutil.copytree(child, OUT / child.name)
+            copy_game_without_git(child, OUT / child.name)
             metadata.append({
                 "name": child.name[3:].replace("-", " ").title(),
                 "icon": "🤖",
