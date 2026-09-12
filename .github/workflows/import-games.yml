@@ -74,10 +74,13 @@ jobs:
               test -d games
               folders=$(find games -mindepth 1 -maxdepth 1 -type d | wc -l)
               indexes=$(find games -mindepth 2 -maxdepth 2 -name index.html -type f | wc -l)
+              files=$(find games -type f | wc -l)
               echo "Total game folders including AI Originals: $folders"
               echo "Total playable entry points including AI Originals: $indexes"
+              echo "Total game files including assets: $files"
               test "$folders" -gt 0
               test "$indexes" -gt 0
+              test "$files" -ge "$indexes"
               test -s games.json
               test -s CREDITS.md
               if grep -q 'UGS Google Drive' games.json; then
@@ -127,10 +130,25 @@ jobs:
           find games -type d -name .git -prune -exec rm -rf {} + 2>/dev/null || true
           find games -type f \( -name .gitmodules -o -name .gitignore -o -name .gitattributes \) -delete 2>/dev/null || true
 
-          # Remove old gitlinks from the index, then stage the actual files.
+          # Remove old gitlinks from the index, then FORCE-STAGE the entire games
+          # tree. This is important because imported games can contain files that
+          # match patterns in the repository's ignore rules (WASM, data files,
+          # source maps, assets, etc.). Nothing inside games should be omitted.
           git rm -r --cached --ignore-unmatch games >/dev/null 2>&1 || true
-          git add -A games games.json CREDITS.md
+          git add -A -f games games.json CREDITS.md
           git status --short
+
+          staged_games=$(git diff --cached --name-only -- 'games/**' | wc -l)
+          working_games=$(find games -type f | wc -l)
+          echo "Game files on disk: $working_games"
+          echo "Game files staged for Git: $staged_games"
+
+          if [ "$staged_games" -lt "$working_games" ]; then
+            echo "ERROR: not every game file was staged."
+            echo "Unstaged/untracked game files:"
+            git status --short --untracked-files=all -- games
+            exit 1
+          fi
 
           if git diff --cached --quiet; then
             echo "No game changes to commit."
@@ -144,58 +162,40 @@ jobs:
           fi
 
           echo "Staged file count: $(git diff --cached --name-only | wc -l)"
-          git commit --no-verify -m "Temporarily import GitHub game collections"
+          git commit --no-verify -m "Import complete GitHub game files"
 
-          # Another push can land while the large import is running. Never attempt
-          # a rebase with a dirty tree: Git refuses with 'Please commit or stash them'.
           for attempt in 1 2 3 4 5; do
             echo "Push attempt $attempt/5..."
             git fetch origin main
 
             if ! git merge-base --is-ancestor origin/main HEAD; then
               echo "main changed while the import was running. Preparing a clean rebase."
-
               if [ -n "$(git status --porcelain)" ]; then
-                echo "Unexpected working-tree changes detected; stashing them before rebase."
                 git stash push --include-untracked --message "aither-import-safety-stash-$attempt"
                 STASHED=1
               else
                 STASHED=0
               fi
-
               if ! git rebase origin/main; then
                 git rebase --abort || true
                 if [ "$STASHED" -eq 1 ]; then git stash pop || true; fi
-                echo "Rebase failed; retrying from the current remote state."
                 sleep $((attempt * 10))
                 continue
               fi
-
-              if [ "$STASHED" -eq 1 ]; then
-                if ! git stash pop; then
-                  echo "ERROR: could not restore the temporary safety stash."
-                  exit 1
-                fi
-              fi
+              if [ "$STASHED" -eq 1 ]; then git stash pop || exit 1; fi
             fi
 
-            # The rebase itself should leave a clean tree. If an unexpected file
-            # appears, preserve it rather than letting the push fail mysteriously.
             if [ -n "$(git status --porcelain)" ]; then
-              echo "ERROR: working tree is still dirty before push:"
+              echo "ERROR: working tree is dirty before push:"
               git status --short
               exit 1
             fi
 
             if git push origin HEAD:main; then
-              echo "Game import pushed successfully."
+              echo "Complete game import pushed successfully."
               exit 0
             fi
-
-            if [ "$attempt" -lt 5 ]; then
-              echo "Push rejected because main changed; retrying..."
-              sleep $((attempt * 10))
-            fi
+            if [ "$attempt" -lt 5 ]; then sleep $((attempt * 10)); fi
           done
 
           echo "Unable to push imported games after 5 attempts."
