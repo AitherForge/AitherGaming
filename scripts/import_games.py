@@ -17,13 +17,43 @@ AI_PREFIX = "ai-"
 MAX_FILE_BYTES = 90 * 1024 * 1024
 
 
+def find_entry_file(root: Path):
+    """Find a playable HTML entry file even when it is not named index.html."""
+    preferred = [
+        "index.html", "game.html", "main.html", "play.html", "start.html",
+        "launcher.html", "menu.html", "home.html"
+    ]
+    for name in preferred:
+        candidate = root / name
+        if candidate.is_file() and candidate.stat().st_size > 0:
+            return candidate
+
+    html_files = []
+    try:
+        html_files = [
+            p for p in root.rglob("*.html")
+            if p.is_file() and ".git" not in p.parts and p.stat().st_size > 0
+        ]
+    except OSError:
+        return None
+
+    # Prefer shallow HTML files, then shorter/simple names.
+    html_files.sort(key=lambda p: (len(p.relative_to(root).parts), len(p.name), str(p).lower()))
+    return html_files[0] if html_files else None
+
+
 def discover_game_roots(root: Path):
+    """Discover game folders using ANY HTML entry filename, not only index.html."""
     candidates = []
-    for index in root.rglob("index.html"):
-        parent = index.parent.resolve()
-        if ".git" in parent.parts:
-            continue
-        candidates.append(parent)
+    try:
+        for html_file in root.rglob("*.html"):
+            if ".git" in html_file.parts or not html_file.is_file():
+                continue
+            parent = html_file.parent.resolve()
+            candidates.append(parent)
+    except OSError:
+        return []
+
     unique = sorted(set(candidates), key=lambda p: (len(p.parts), str(p).lower()))
     roots = []
     for candidate in unique:
@@ -38,8 +68,8 @@ def slugify(name: str):
 
 
 def is_probable_local_game(root: Path):
-    entry = root / "index.html"
-    if not entry.is_file() or entry.stat().st_size == 0:
+    entry = find_entry_file(root)
+    if entry is None:
         return False
     try:
         html = entry.read_text(encoding="utf-8", errors="ignore").lower()
@@ -73,7 +103,7 @@ def collect(roots, source, used_slugs, used_names):
 
 
 def copy_game_without_git(source_root: Path, destination: Path):
-    """Copy a game while stripping nested Git/submodule metadata."""
+    """Copy the COMPLETE game folder, stripping only nested Git metadata."""
     ignored_names = {".git", ".gitmodules", ".gitignore", ".gitattributes"}
 
     def ignore(_directory, names):
@@ -140,34 +170,42 @@ source_counts = {}
 for i, (name, slug, source, source_root) in enumerate(selected, 1):
     destination = OUT / slug
     copy_game_without_git(source_root, destination)
-    entry = destination / "index.html"
-    if not entry.is_file() or entry.stat().st_size == 0:
-        raise SystemExit(f"Invalid local game entry point after copying: {name}")
+    entry = find_entry_file(destination)
+    if entry is None:
+        raise SystemExit(f"No HTML entry point after copying: {name}")
+
+    # Aither's game loader can use the detected entry file instead of assuming index.html.
+    relative_entry = entry.relative_to(destination).as_posix()
     metadata.append({
         "name": name,
         "icon": icons[(i - 1) % len(icons)],
         "category": "GitHub Collections",
         "source": source,
         "path": f"games/{slug}",
+        "entry": relative_entry,
     })
     source_counts[source] = source_counts.get(source, 0) + 1
-    credits.append(f"- {name} — {source}")
+    credits.append(f"- {name} — {source} — entry: `{relative_entry}`")
 
 # Restore Aither AI Originals.
 ai_count = 0
 if ai_backup.exists():
     for child in sorted(ai_backup.iterdir()):
-        if child.is_dir() and child.name.startswith(AI_PREFIX) and (child / "index.html").is_file():
-            copy_game_without_git(child, OUT / child.name)
-            metadata.append({
-                "name": child.name[3:].replace("-", " ").title(),
-                "icon": "🤖",
-                "category": "AI Originals",
-                "source": "Aither Gaming",
-                "path": f"games/{child.name}",
-            })
-            ai_count += 1
-            credits.append(f"- {child.name[3:].replace('-', ' ').title()} — Aither AI Original")
+        if child.is_dir():
+            entry = find_entry_file(child)
+            if entry is not None:
+                copy_game_without_git(child, OUT / child.name)
+                copied_entry = find_entry_file(OUT / child.name)
+                metadata.append({
+                    "name": child.name[3:].replace("-", " ").title(),
+                    "icon": "🤖",
+                    "category": "AI Originals",
+                    "source": "Aither Gaming",
+                    "path": f"games/{child.name}",
+                    "entry": copied_entry.relative_to(OUT / child.name).as_posix(),
+                })
+                ai_count += 1
+                credits.append(f"- {child.name[3:].replace('-', ' ').title()} — Aither AI Original")
     shutil.rmtree(ai_backup)
 
 credits.extend(["", "## Imported totals", ""])
