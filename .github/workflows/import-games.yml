@@ -31,9 +31,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          # The importer modifies games/, games.json and CREDITS.md. Start from the
-          # exact current main commit so the later commit step never tries to rebase
-          # with generated files already sitting in the working tree.
           git fetch origin main
           git reset --hard origin/main
           git clean -fd
@@ -126,15 +123,12 @@ jobs:
           git config core.compression 0
           git config http.version HTTP/1.1
 
-          # Imported repositories must never become Git submodules/nested repositories.
           echo "Removing stale nested Git metadata..."
           find games -type d -name .git -prune -exec rm -rf {} + 2>/dev/null || true
           find games -type f \( -name .gitmodules -o -name .gitignore -o -name .gitattributes \) -delete 2>/dev/null || true
 
-          # Clear any old tracked gitlinks and re-stage the clean imported tree.
+          # Remove old gitlinks from the index, then stage the actual files.
           git rm -r --cached --ignore-unmatch games >/dev/null 2>&1 || true
-
-          echo "Staging imported game files..."
           git add -A games games.json CREDITS.md
           git status --short
 
@@ -143,7 +137,6 @@ jobs:
             exit 0
           fi
 
-          echo "Checking for nested Git links before commit..."
           if git diff --cached --raw | grep -q '160000'; then
             echo "ERROR: a nested Git submodule entry is still staged."
             git diff --cached --raw | grep '160000' || true
@@ -151,21 +144,58 @@ jobs:
           fi
 
           echo "Staged file count: $(git diff --cached --name-only | wc -l)"
-          echo "Creating import commit..."
           git commit --no-verify -m "Temporarily import GitHub game collections"
 
+          # Another push can land while the large import is running. Never attempt
+          # a rebase with a dirty tree: Git refuses with 'Please commit or stash them'.
           for attempt in 1 2 3 4 5; do
             echo "Push attempt $attempt/5..."
             git fetch origin main
+
             if ! git merge-base --is-ancestor origin/main HEAD; then
-              echo "main changed while the import was running; rebasing before retry."
-              git rebase origin/main
+              echo "main changed while the import was running. Preparing a clean rebase."
+
+              if [ -n "$(git status --porcelain)" ]; then
+                echo "Unexpected working-tree changes detected; stashing them before rebase."
+                git stash push --include-untracked --message "aither-import-safety-stash-$attempt"
+                STASHED=1
+              else
+                STASHED=0
+              fi
+
+              if ! git rebase origin/main; then
+                git rebase --abort || true
+                if [ "$STASHED" -eq 1 ]; then git stash pop || true; fi
+                echo "Rebase failed; retrying from the current remote state."
+                sleep $((attempt * 10))
+                continue
+              fi
+
+              if [ "$STASHED" -eq 1 ]; then
+                if ! git stash pop; then
+                  echo "ERROR: could not restore the temporary safety stash."
+                  exit 1
+                fi
+              fi
             fi
+
+            # The rebase itself should leave a clean tree. If an unexpected file
+            # appears, preserve it rather than letting the push fail mysteriously.
+            if [ -n "$(git status --porcelain)" ]; then
+              echo "ERROR: working tree is still dirty before push:"
+              git status --short
+              exit 1
+            fi
+
             if git push origin HEAD:main; then
               echo "Game import pushed successfully."
               exit 0
             fi
-            if [ "$attempt" -lt 5 ]; then sleep $((attempt * 10)); fi
+
+            if [ "$attempt" -lt 5 ]; then
+              echo "Push rejected because main changed; retrying..."
+              sleep $((attempt * 10))
+            fi
           done
 
           echo "Unable to push imported games after 5 attempts."
