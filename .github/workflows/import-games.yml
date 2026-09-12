@@ -1,6 +1,6 @@
 name: Import Aither Gaming
 
-# TEMPORARY: GitHub-only game import. Google Drive is intentionally disabled for this run.
+# TEMPORARY: GitHub-only game import. Source files are downloaded through jsDelivr.
 on:
   workflow_dispatch:
   push:
@@ -35,52 +35,98 @@ jobs:
           git reset --hard origin/main
           git clean -fd
 
-      - name: Clone all temporary GitHub game collections
+      - name: Download all temporary GitHub game collections through jsDelivr
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf /tmp/ugs /tmp/eaglercraft-extras /tmp/aa /tmp/shrimpy-game-box /tmp/jsgames /tmp/html-minigames /tmp/classic-games-collection
+          rm -rf /tmp/game-sources
+          mkdir -p /tmp/game-sources
 
-          clone_with_retry() {
-            local url="$1"
+          download_repo() {
+            local repo="$1"
             local destination="$2"
+            local branch="${3:-main}"
+            local manifest="/tmp/${destination##*/}-jsdelivr.json"
+            local base="https://cdn.jsdelivr.net/gh/${repo}@${branch}"
+
+            echo "Getting jsDelivr file manifest for ${repo}@${branch}..."
             for attempt in 1 2 3 4 5; do
-              echo "Cloning $url (attempt $attempt/5)..."
-              rm -rf "$destination"
-              if git clone --depth 1 --no-tags "$url" "$destination"; then
-                return 0
+              if curl -fsSL --retry 3 --retry-delay 2 "https://data.jsdelivr.com/v1/package/gh/${repo}@${branch}" -o "$manifest"; then
+                break
               fi
-              if [ "$attempt" -lt 5 ]; then sleep $((attempt * 10)); fi
+              if [ "$attempt" -eq 5 ]; then
+                echo "Unable to get jsDelivr manifest for ${repo}@${branch}."
+                return 1
+              fi
+              sleep $((attempt * 10))
             done
-            echo "Unable to clone $url after 5 attempts."
-            return 1
+
+            mkdir -p "$destination"
+            python3 - "$manifest" "$base" "$destination" <<'PY'
+import json
+import os
+import subprocess
+import sys
+
+manifest_path, base, destination = sys.argv[1:]
+data = json.load(open(manifest_path, encoding="utf-8"))
+files = []
+
+def walk(node, prefix=""):
+    if isinstance(node, dict):
+        name = node.get("name", "")
+        path = f"{prefix}/{name}" if prefix and name else (name or prefix)
+        if node.get("type") == "file":
+            files.append(path.lstrip("/"))
+        for child in node.get("files", []) or []:
+            walk(child, path)
+    elif isinstance(node, list):
+        for child in node:
+            walk(child, prefix)
+
+walk(data.get("files", []))
+
+# Never import repository Git metadata through the CDN.
+files = [p for p in files if not any(part in {".git", ".github"} for part in p.split("/"))]
+print(f"jsDelivr reports {len(files)} files")
+
+for rel in files:
+    target = os.path.join(destination, rel)
+    os.makedirs(os.path.dirname(target), exist_ok=True)
+    url = base + "/" + "/".join(subprocess.run(["python3", "-c", "import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1], safe='/@'))", rel], capture_output=True, text=True, check=True).stdout.strip().splitlines()[-1:]) if False else None
+    import urllib.parse
+    url = base + "/" + urllib.parse.quote(rel, safe="/@-_.~()")
+    subprocess.run([
+        "curl", "-fsSL", "--retry", "4", "--retry-delay", "2", "--connect-timeout", "20", "--max-time", "300", url, "-o", target
+    ], check=True)
+PY
           }
 
-          clone_with_retry https://github.com/bubbls/UGS-Assets.git /tmp/ugs
-          clone_with_retry https://github.com/x8rr/Eaglercraft-Extras.git /tmp/eaglercraft-extras
-          clone_with_retry https://github.com/aa-gamerz22/aa-gamerz-games.git /tmp/aa
-          clone_with_retry https://github.com/Shrimpy-com/Shrimpy-Game-Box.git /tmp/shrimpy-game-box
-          clone_with_retry https://github.com/mariohd/JSGames.git /tmp/jsgames
-          clone_with_retry https://github.com/Rysm/html-minigames.git /tmp/html-minigames
-          clone_with_retry https://github.com/stphung/classic-games-collection.git /tmp/classic-games-collection
+          download_repo bubbls/UGS-Assets /tmp/game-sources/ugs main
+          download_repo x8rr/Eaglercraft-Extras /tmp/game-sources/eaglercraft-extras main
+          download_repo aa-gamerz22/aa-gamerz-games /tmp/game-sources/aa main
+          download_repo Shrimpy-com/Shrimpy-Game-Box /tmp/game-sources/shrimpy-game-box main
+          download_repo mariohd/JSGames /tmp/game-sources/jsgames main
+          download_repo Rysm/html-minigames /tmp/game-sources/html-minigames main
+          download_repo stphung/classic-games-collection /tmp/game-sources/classic-games-collection main
 
-      - name: Import every usable GitHub game
+      - name: Import every usable game
         shell: bash
         run: |
           set -euo pipefail
           for attempt in 1 2 3 4 5; do
-            echo "GitHub-only import attempt $attempt/5..."
-            if python3 scripts/import_games.py /tmp/ugs /tmp/eaglercraft-extras /tmp/aa /tmp/shrimpy-game-box /tmp/jsgames /tmp/html-minigames /tmp/classic-games-collection; then
+            echo "jsDelivr game import attempt $attempt/5..."
+            if python3 scripts/import_games.py /tmp/game-sources/ugs /tmp/game-sources/eaglercraft-extras /tmp/game-sources/aa /tmp/game-sources/shrimpy-game-box /tmp/game-sources/jsgames /tmp/game-sources/html-minigames /tmp/game-sources/classic-games-collection; then
               test -d games
               folders=$(find games -mindepth 1 -maxdepth 1 -type d | wc -l)
-              indexes=$(find games -mindepth 2 -maxdepth 2 -name index.html -type f | wc -l)
+              entries=$(python3 -c 'import json; print(sum(1 for g in json.load(open("games.json", encoding="utf-8")) if g.get("entry")))')
               files=$(find games -type f | wc -l)
               echo "Total game folders including AI Originals: $folders"
-              echo "Total playable entry points including AI Originals: $indexes"
+              echo "Total playable entry points including AI Originals: $entries"
               echo "Total game files including assets: $files"
               test "$folders" -gt 0
-              test "$indexes" -gt 0
-              test "$files" -ge "$indexes"
+              test "$entries" -gt 0
+              test "$files" -ge "$entries"
               test -s games.json
               test -s CREDITS.md
               if grep -q 'UGS Google Drive' games.json; then
@@ -91,7 +137,7 @@ jobs:
             fi
             if [ "$attempt" -lt 5 ]; then sleep $((attempt * 10)); fi
           done
-          echo "GitHub-only import failed after 5 attempts."
+          echo "jsDelivr game import failed after 5 attempts."
           exit 1
 
       - name: Verify files are safe for GitHub
@@ -130,22 +176,17 @@ jobs:
           find games -type d -name .git -prune -exec rm -rf {} + 2>/dev/null || true
           find games -type f \( -name .gitmodules -o -name .gitignore -o -name .gitattributes \) -delete 2>/dev/null || true
 
-          # Remove old gitlinks from the index, then FORCE-STAGE the entire games
-          # tree. This is important because imported games can contain files that
-          # match patterns in the repository's ignore rules (WASM, data files,
-          # source maps, assets, etc.). Nothing inside games should be omitted.
           git rm -r --cached --ignore-unmatch games >/dev/null 2>&1 || true
           git add -A -f games games.json CREDITS.md
           git status --short
 
-          staged_games=$(git diff --cached --name-only -- 'games/**' | wc -l)
+          staged_games=$(git diff --cached --name-only -- games | wc -l)
           working_games=$(find games -type f | wc -l)
           echo "Game files on disk: $working_games"
           echo "Game files staged for Git: $staged_games"
 
           if [ "$staged_games" -lt "$working_games" ]; then
             echo "ERROR: not every game file was staged."
-            echo "Unstaged/untracked game files:"
             git status --short --untracked-files=all -- games
             exit 1
           fi
@@ -162,7 +203,7 @@ jobs:
           fi
 
           echo "Staged file count: $(git diff --cached --name-only | wc -l)"
-          git commit --no-verify -m "Import complete GitHub game files"
+          git commit --no-verify -m "Import complete game files through jsDelivr"
 
           for attempt in 1 2 3 4 5; do
             echo "Push attempt $attempt/5..."
@@ -192,7 +233,7 @@ jobs:
             fi
 
             if git push origin HEAD:main; then
-              echo "Complete game import pushed successfully."
+              echo "Complete jsDelivr game import pushed successfully."
               exit 0
             fi
             if [ "$attempt" -lt 5 ]; then sleep $((attempt * 10)); fi
