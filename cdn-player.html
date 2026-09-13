@@ -1,57 +1,39 @@
 <!doctype html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Aither Gaming</title><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#080b14;font-family:system-ui}#game{position:fixed;inset:0;width:100%;height:100%;border:0;background:#000}#status{position:fixed;z-index:20;inset:0;display:grid;place-items:center;color:white;background:#080b14;font-weight:700;padding:20px;text-align:center}</style></head><body><div id="status">Loading game…</div><iframe id="game" allow="fullscreen;autoplay;gamepad;pointer-lock;clipboard-read;clipboard-write" allowfullscreen></iframe><script>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Aither Gaming</title><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#080b14;font-family:system-ui}#game{position:fixed;inset:0;width:100%;height:100%;border:0;background:#000}#status{position:fixed;z-index:20;inset:0;display:grid;place-items:center;color:white;background:#080b14;font-weight:700;padding:20px;text-align:center;transition:opacity .15s}</style></head><body><div id="status">⚡ Starting game…</div><iframe id="game" allow="fullscreen;autoplay;gamepad;pointer-lock;clipboard-read;clipboard-write" allowfullscreen></iframe><script>
 const frame=document.getElementById('game'),status=document.getElementById('status');
 const OWN='AitherNexus/AitherGaming',REPOS=[['bubbls','UGS-Assets'],['x8rr','Eaglercraft-Extras'],['aa-gamerz22','aa-gamerz-games'],['Shrimpy-com','Shrimpy-Game-Box'],['mariohd','JSGames'],['Rysm','html-minigames'],['stphung','classic-games-collection']];
 const norm=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
 const enc=p=>String(p).split('/').filter(Boolean).map(encodeURIComponent).join('/');
 const slug=p=>String(p||'').split('/').filter(Boolean).pop()||'';
 const htmlNames=['index.html','game.html','main.html','play.html','start.html','launcher.html','menu.html','home.html'];
-async function json(u){let r=await fetch(u,{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);return r.json()}
+const RES='aither-cdn-resolve:',HTML='aither-cdn-html:';
+async function json(u){let r=await fetch(u,{cache:'force-cache'});if(!r.ok)throw Error('HTTP '+r.status);return r.json()}
+function read(k){try{return JSON.parse(localStorage.getItem(k)||'null')}catch(e){return null}}
+function write(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+function fastKnown(g){
+  const n=norm(g.name),p=norm(g.path),s=norm(slug(g.path));
+  if(n.includes('geometrydashlite')||p==='gdlite')return {o:'bubbls',r:'UGS-Assets',b:'main',p:'gdlite/index.html'};
+  if(n==='eaglecrft'||n==='eaglecraft'||p==='eaglecrft'||s==='eaglecrft')return {o:'x8rr',r:'Eaglercraft-Extras',b:'main',p:'clients/1.8/index.html'};
+  return null;
+}
+function ownFast(g){
+  // Imported/AI games almost always use index.html. Avoid a GitHub API round-trip.
+  return {o:OWN.split('/')[0],r:OWN.split('/')[1],b:'main',p:String(g.path).replace(/\/$/,'')+'/index.html',local:true};
+}
 async function ownEntry(g){
+  const fast=ownFast(g),key=RES+norm(g.path),saved=read(key);if(saved)return saved;
+  try{let r=await fetch('https://cdn.jsdelivr.net/gh/'+fast.o+'/'+fast.r+'@main/'+enc(fast.p),{cache:'force-cache'});if(r.ok){write(key,fast);return fast}}catch(e){}
   const dir='https://api.github.com/repos/'+OWN+'/contents/'+enc(g.path);
-  try{
-    const items=await json(dir+'?ref=main');
-    if(Array.isArray(items)){
-      const html=items.filter(x=>x.type==='file'&&/\.html?$/i.test(x.name));
-      if(html.length){html.sort((a,b)=>{let ai=htmlNames.indexOf(a.name.toLowerCase()),bi=htmlNames.indexOf(b.name.toLowerCase());ai=ai<0?999:ai;bi=bi<0?999:bi;return ai-bi||a.name.localeCompare(b.name)});return {o:'AitherNexus',r:'AitherGaming',b:'main',p:g.path+'/'+html[0].name,local:true}}
-    }
-  }catch(e){}
+  try{const items=await json(dir+'?ref=main');if(Array.isArray(items)){const html=items.filter(x=>x.type==='file'&&/\.html?$/i.test(x.name));if(html.length){html.sort((a,b)=>{let ai=htmlNames.indexOf(a.name.toLowerCase()),bi=htmlNames.indexOf(b.name.toLowerCase());ai=ai<0?999:ai;bi=bi<0?999:bi;return ai-bi||a.name.localeCompare(b.name)});const x={o:OWN.split('/')[0],r:OWN.split('/')[1],b:'main',p:g.path+'/'+html[0].name,local:true};write(key,x);return x}}}catch(e){}
   return null;
 }
 function cacheKey(o,r){return 'aither-cdn-tree:'+o+'/'+r}
-async function tree(o,r){
-  const k=cacheKey(o,r),old=localStorage.getItem(k);if(old)try{const x=JSON.parse(old);if(Date.now()-x.t<21600000)return x.v}catch(e){}
-  const m=await json('https://api.github.com/repos/'+o+'/'+r),b=m.default_branch||'main';
-  const d=await json('https://api.github.com/repos/'+o+'/'+r+'/git/trees/'+encodeURIComponent(b)+'?recursive=1');
-  const v={branch:b,files:(d.tree||[]).filter(x=>x.type==='blob'&&/\.html?$/i.test(x.path)).map(x=>x.path)};
-  try{localStorage.setItem(k,JSON.stringify({t:Date.now(),v}))}catch(e){}return v;
-}
-function score(p,g){const a=p.split('/'),f=a.at(-1).replace(/\.html?$/i,''),parent=a.at(-2)||'',n=norm(g.name),s=norm(slug(g.path)),fn=norm(f),pn=norm(parent);let v=0;if(fn===n)v+=180;if(fn===s)v+=170;if(pn===n)v+=160;if(pn===s)v+=150;if(fn==='index')v+=25;const toks=String(g.name).toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);if(toks.length&&toks.every(w=>(fn+' '+pn).includes(w)))v+=110;if(n&&(fn+pn).includes(n))v+=80;return v-a.length*2}
-function known(g){const n=norm(g.name),p=norm(g.path);if(n==='geometrydashlite'||n==='geometrydashlitegame'||n==='geometrydashliteweb'||p==='gdlite')return {o:'bubbls',r:'UGS-Assets',b:'main',p:'gdlite/index.html'};if(n==='eaglecrft'||n==='eaglecraft'||p==='eaglecrft')return {o:'x8rr',r:'Eaglercraft-Extras',b:'main',p:'clients/1.8/index.html'};return null}
-async function externalEntry(g){
-  const k='aither-cdn-resolve:'+norm(g.name)+'|'+norm(g.path),old=localStorage.getItem(k);if(old)try{const x=JSON.parse(old);if(x&&x.p)return x}catch(e){}
-  const knownPath=known(g);if(knownPath){try{await json('https://api.github.com/repos/'+knownPath.o+'/'+knownPath.r+'/contents/'+enc(knownPath.p)+'?ref='+encodeURIComponent(knownPath.b));localStorage.setItem(k,JSON.stringify(knownPath));return knownPath}catch(e){}}
-  const base=slug(g.path),name=norm(g.name),cands=[];
-  for(const repo of REPOS){try{const t=await tree(repo[0],repo[1]);for(const p of t.files){const a=p.split('/'),f=norm(a.at(-1).replace(/\.html?$/i,'')),par=norm(a.at(-2)||'');let s=0;if(f===name)s+=180;if(f===norm(base))s+=170;if(par===name)s+=160;if(par===norm(base))s+=150;if(f==='index')s+=20;s-=a.length*2;cands.push({o:repo[0],r:repo[1],b:t.branch,p,score:s})}}catch(e){}}
-  cands.sort((a,b)=>b.score-a.score);const x=cands[0];if(!x||x.score<20)throw Error('Could not find the game source');try{localStorage.setItem(k,JSON.stringify(x))}catch(e){}return x;
-}
+async function tree(o,r){const k=cacheKey(o,r),old=read(k);if(old&&Date.now()-old.t<86400000)return old.v;const m=await json('https://api.github.com/repos/'+o+'/'+r),b=m.default_branch||'main';const d=await json('https://api.github.com/repos/'+o+'/'+r+'/git/trees/'+encodeURIComponent(b)+'?recursive=1');const v={branch:b,files:(d.tree||[]).filter(x=>x.type==='blob'&&/\.html?$/i.test(x.path)).map(x=>x.path)};write(k,{t:Date.now(),v});return v}
+function score(p,g){const a=p.split('/'),f=norm(a.at(-1).replace(/\.html?$/,'')),par=norm(a.at(-2)||''),n=norm(g.name),s=norm(slug(g.path));let v=0;if(f===n)v+=180;if(f===s)v+=170;if(par===n)v+=160;if(par===s)v+=150;if(f==='index')v+=25;const toks=String(g.name).toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);if(toks.length&&toks.every(w=>(f+' '+par).includes(w)))v+=110;return v-a.length*2}
+async function externalEntry(g){const key=RES+norm(g.path),saved=read(key);if(saved&&saved.p)return saved;const known=fastKnown(g);if(known){write(key,known);return known}const jobs=REPOS.map(async repo=>{try{const t=await tree(repo[0],repo[1]);return t.files.map(p=>({o:repo[0],r:repo[1],b:t.branch,p,score:score(p,g)}))}catch(e){return []}});const groups=await Promise.all(jobs),cands=groups.flat().sort((a,b)=>b.score-a.score);const x=cands[0];if(!x||x.score<20)throw Error('Could not find the game source');write(key,x);return x}
 async function game(){const p=new URLSearchParams(location.search).get('game');if(!p)throw Error('No game selected');const [a,b]=await Promise.all([json('games.json'),json('ai-games.json').catch(()=>[])]);const g=[...a,...b].find(x=>x.path===p);if(!g)throw Error('Game not found');return g}
-function merger(base){return '<script>(function(){var base='+JSON.stringify(base)+',cfg=window.fileMergerConfig;if(!cfg||!cfg.files)return;var F=window.fetch.bind(window),X=window.XMLHttpRequest,M={};function u(n){return base+encodeURIComponent(n)+".part"}async function m(f){var a=[];for(var i=1;i<=(f.parts||1);i++){var r=await F(u(f.name)+i,{cache:"force-cache"});if(!r.ok)throw Error(f.name+" part "+i+" HTTP "+r.status);a.push(await r.arrayBuffer())}var z=new Uint8Array(a.reduce((n,x)=>n+x.byteLength,0)),o=0;a.forEach(x=>{z.set(new Uint8Array(x),o);o+=x.byteLength});M[f.name]=z.buffer}Promise.all(cfg.files.map(m)).catch(console.error);function find(z){z=decodeURIComponent(String(z).split("?")[0]);return cfg.files.find(f=>z.endsWith("/"+f.name)||z===f.name||z.endsWith("/"+f.name+".br"))}function res(f){return new Response(M[f.name],{status:200,headers:{"Content-Type":/wasm/i.test(f.name)?"application/wasm":"application/octet-stream"}})}window.fetch=function(z){var f=find(z);if(!f)return F.apply(this,arguments);return new Promise(function(ok,no){var t=Date.now(),q=setInterval(function(){if(M[f.name]){clearInterval(q);ok(res(f))}else if(Date.now()-t>180000){clearInterval(q);no(Error("Timed out loading "+f.name))}},100)})};window.XMLHttpRequest=function(){var x=new X(),op=x.open.bind(x),sn=x.send.bind(x),z="";x.open=function(m,u){z=u;return op.apply(x,arguments)};x.send=function(){var f=find(z);if(!f)return sn.apply(x,arguments);(function q(){if(!M[f.name])return setTimeout(q,100);Object.defineProperties(x,{status:{value:200},statusText:{value:"OK"},response:{value:M[f.name]},responseType:{value:"arraybuffer"},readyState:{value:4}});setTimeout(function(){x.onreadystatechange&&x.onreadystatechange();x.onload&&x.onload({target:x})},0)})()};return x}})();</script>'}
+function merger(base){return '<script>(function(){var base='+JSON.stringify(base)+',cfg=window.fileMergerConfig;if(!cfg||!cfg.files)return;var F=window.fetch.bind(window),X=window.XMLHttpRequest,M={};function u(n){return base+encodeURIComponent(n)+".part"}async function m(f){var a=[];for(var i=1;i<=(f.parts||1);i++){var r=await F(u(f.name)+i,{cache:"force-cache"});if(!r.ok)throw Error(f.name+" part "+i+" HTTP "+r.status);a.push(await r.arrayBuffer())}var z=new Uint8Array(a.reduce((n,x)=>n+x.byteLength,0)),o=0;a.forEach(x=>{z.set(new Uint8Array(x),o);o+=x.byteLength});M[f.name]=z.buffer}Promise.all(cfg.files.map(m)).catch(console.error);function find(z){z=decodeURIComponent(String(z).split("?")[0]);return cfg.files.find(f=>z.endsWith("/"+f.name)||z===f.name||z.endsWith("/"+f.name+".br"))}function res(f){return new Response(M[f.name],{status:200,headers:{"Content-Type":/wasm/i.test(f.name)?"application/wasm":"application/octet-stream","Cache-Control":"public,max-age=31536000,immutable"}})}window.fetch=function(z){var f=find(z);if(!f)return F.apply(this,arguments);return new Promise(function(ok,no){var t=Date.now(),q=setInterval(function(){if(M[f.name]){clearInterval(q);ok(res(f))}else if(Date.now()-t>180000){clearInterval(q);no(Error("Timed out loading "+f.name))}},50)})};window.XMLHttpRequest=function(){var x=new X(),op=x.open.bind(x),sn=x.send.bind(x),z="";x.open=function(m,u){z=u;return op.apply(x,arguments)};x.send=function(){var f=find(z);if(!f)return sn.apply(x,arguments);(function q(){if(!M[f.name])return setTimeout(q,50);Object.defineProperties(x,{status:{value:200},statusText:{value:"OK"},response:{value:M[f.name]},responseType:{value:"arraybuffer"},readyState:{value:4}});setTimeout(function(){x.onreadystatechange&&x.onreadystatechange();x.onload&&x.onload({target:x})},0)})()};return x}})();</script>'}
 function makeBase(u){return u.slice(0,u.lastIndexOf('/')+1)}
-async function load(){
-  const g=await game();let s=await ownEntry(g);
-  if(!s){s=await externalEntry(g)}
-  const u='https://cdn.jsdelivr.net/gh/'+s.o+'/'+s.r+'@'+encodeURIComponent(s.b)+'/'+enc(s.p),dir=makeBase(u);
-  status.textContent='Loading '+g.name+' from jsDelivr…';
-  const r=await fetch(u);if(!r.ok)throw Error('CDN HTTP '+r.status);let h=await r.text();
-  h=h.replace(/<base[^>]*>/gi,'');const base='<base href="'+dir.replace(/"/g,'&quot;')+'">';
-  h=/<head[^>]*>/i.test(h)?h.replace(/<head([^>]*)>/i,'<head$1>'+base):'<!doctype html><html><head>'+base+'</head><body>'+h+'</body></html>';
-  if(s.o==='bubbls'&&s.r==='UGS-Assets'&&/gdlite/i.test(s.p)){
-    const mg=merger(dir+'Build/');
-    const re=/<script[^>]+src=["'][^"']*merge\.js[^"']*["'][^>]*><\/script>/i;
-    h=re.test(h)?h.replace(re,mg):h.replace(/<script[^>]+src=["'][^"']*UnityLoader\.js[^"']*["'][^>]*>/i,mg+'$&');
-  }
-  frame.srcdoc=h;frame.onload=()=>status.remove();
-}
+async function load(){const g=await game();let s=read(RES+norm(g.path))||fastKnown(g)||await ownEntry(g)||await externalEntry(g);write(RES+norm(g.path),s);const u='https://cdn.jsdelivr.net/gh/'+s.o+'/'+s.r+'@'+encodeURIComponent(s.b)+'/'+enc(s.p),dir=makeBase(u),hk=HTML+u;status.textContent='⚡ '+g.name;let h=null,cached=read(hk);if(cached&&cached.h)h=cached.h;if(!h){const r=await fetch(u,{cache:'force-cache'});if(!r.ok)throw Error('CDN HTTP '+r.status);h=await r.text();write(hk,{h,t:Date.now()})}h=h.replace(/<base[^>]*>/gi,'');const base='<base href="'+dir.replace(/"/g,'&quot;')+'">';h=/<head[^>]*>/i.test(h)?h.replace(/<head([^>]*)>/i,'<head$1>'+base):'<!doctype html><html><head>'+base+'</head><body>'+h+'</body></html>';if(s.o==='bubbls'&&s.r==='UGS-Assets'&&/gdlite/i.test(s.p)){const mg=merger(dir+'Build/');const re=/<script[^>]+src=["'][^"']*merge\.js[^"']*["'][^>]*><\/script>/i;h=re.test(h)?h.replace(re,mg):h.replace(/<script[^>]+src=["'][^"']*UnityLoader\.js[^"']*["'][^>]*>/i,mg+'$&')}frame.srcdoc=h;frame.onload=()=>{status.style.opacity='0';setTimeout(()=>status.remove(),180)}}
 load().catch(e=>{status.textContent='🎮 '+(e.message||e)+' — Tap to retry';status.onclick=()=>location.reload()});
 </script></body></html>
