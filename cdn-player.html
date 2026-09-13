@@ -1,99 +1,14 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#080b14"><title>Aither Gaming</title>
-<style>
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#080b14;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}#game{position:fixed;inset:0;width:100%;height:100%;border:0;background:#000}#bar{position:fixed;z-index:20;left:12px;right:12px;top:12px;display:flex;gap:8px;align-items:center;padding:8px;border-radius:15px;background:rgba(8,11,20,.84);backdrop-filter:blur(14px);box-shadow:0 8px 30px rgba(0,0,0,.35)}#bar button{border:1px solid #303952;border-radius:10px;padding:9px 13px;background:#fff;color:#080b14;font-weight:800;cursor:pointer}#title{flex:1;min-width:0;color:#fff;font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#status{position:fixed;z-index:30;inset:0;display:grid;place-items:center;color:#dce4ff;font-weight:700;font-size:16px;padding:24px;text-align:center;background:#080b14}.hidden{display:none!important}@media(max-width:600px){#bar{left:7px;right:7px;top:7px;padding:6px}#bar button{padding:8px 9px;font-size:12px}}
-</style>
-</head>
-<body>
-<div id="status">Loading game…</div>
-<div id="bar"><button id="back">← Games</button><span id="title"></span><button id="fullscreen">⛶ Fullscreen</button></div>
-<iframe id="game" title="Aither Gaming game" allow="fullscreen; autoplay; gamepad; pointer-lock; clipboard-read; clipboard-write" allowfullscreen></iframe>
-<script>
-const frame=document.getElementById('game'),status=document.getElementById('status'),titleEl=document.getElementById('title');
-const back=()=>location.href='index.html';document.getElementById('back').onclick=back;
-document.getElementById('fullscreen').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await frame.requestFullscreen()}catch(e){}};
-function esc(s){return String(s).replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]))}
-const REPOS=[
-  ['bubbls','UGS-Assets'],
-  ['x8rr','Eaglercraft-Extras'],
-  ['aa-gamerz22','aa-gamerz-games'],
-  ['Shrimpy-com','Shrimpy-Game-Box'],
-  ['mariohd','JSGames'],
-  ['Rysm','html-minigames'],
-  ['stphung','classic-games-collection']
-];
-const CACHE_KEY='aither-cdn-trees-v2';
-const norm=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'');
-const encPath=p=>String(p||'').split('/').filter(Boolean).map(encodeURIComponent).join('/');
-const slugOf=p=>String(p||'').split('/').filter(Boolean).pop()||'';
-const repoKey=(o,r)=>o+'/'+r;
-async function getTree(owner,repo){
- const key=repoKey(owner,repo),cache=JSON.parse(localStorage.getItem(CACHE_KEY)||'{}');
- if(cache[key]&&Date.now()-cache[key].time<6*60*60*1000)return cache[key].files;
- const r=await fetch(`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/git/trees/main?recursive=1`,{headers:{Accept:'application/vnd.github+json'}});
- if(!r.ok)throw Error(`${key}: GitHub tree ${r.status}`);
- const d=await r.json();
- const files=(d.tree||[]).filter(x=>x.type==='blob'&&/\.html?$/i.test(x.path)).map(x=>x.path);
- cache[key]={time:Date.now(),files};localStorage.setItem(CACHE_KEY,JSON.stringify(cache));return files;
-}
-function scorePath(path,g){
- const parts=path.split('/');const file=parts[parts.length-1];const stem=file.replace(/\.html?$/i,'');
- const target=norm(g.name),slug=norm(slugOf(g.path));let score=0;
- if(norm(stem)===target)score+=100;
- if(norm(stem)===slug)score+=95;
- if(norm(parts[parts.length-2]||'')===target)score+=80;
- if(norm(parts[parts.length-2]||'')===slug)score+=75;
- if(/^index$/i.test(stem))score+=15;
- if(/^(game|main|play|start|launcher|menu|home)$/i.test(stem))score+=10;
- score-=parts.length;
- return score;
-}
-async function resolveExternal(g){
- const all=[];
- await Promise.all(REPOS.map(async([owner,repo])=>{try{const files=await getTree(owner,repo);for(const path of files)all.push({owner,repo,path,score:scorePath(path,g)})}catch(_){}}));
- all.sort((a,b)=>b.score-a.score);
- const best=all[0];
- if(!best||best.score<15)throw Error('Could not find this game in the CDN source collections.');
- const url=`https://cdn.jsdelivr.net/gh/${best.owner}/${best.repo}@main/${encPath(best.path)}`;
- const dir=url.slice(0,url.lastIndexOf('/')+1);
- return {url,dir,source:`${best.owner}/${best.repo}`};
-}
-async function getGame(){
- const path=new URLSearchParams(location.search).get('game');
- if(!path)throw Error('No game was selected.');
- const [main,ai]=await Promise.all([
-   fetch('games.json',{cache:'no-store'}).then(r=>r.ok?r.json():[]),
-   fetch('ai-games.json',{cache:'no-store'}).then(r=>r.ok?r.json():[]).catch(()=>[])
- ]);
- const g=[...main,...ai].find(x=>x.path===path);
- if(!g)throw Error('That game is not in the Aither Gaming library.');
- return g;
-}
-async function load(){
- const g=await getGame();
- titleEl.textContent=g.name||'Game';
- let source;
- if(g.category==='AI Originals'||String(g.path).includes('/ai-')){
-   const entry=g.entry||'index.html';
-   const url=`https://cdn.jsdelivr.net/gh/AitherNexus/AitherGaming@main/${encPath(g.path)}/${encPath(entry)}`;
-   source={url,dir:url.slice(0,url.lastIndexOf('/')+1),source:'AitherNexus/AitherGaming'};
- }else{
-   source=await resolveExternal(g);
- }
- status.textContent='Loading '+(g.name||'game')+' from jsDelivr…';
- const response=await fetch(source.url,{cache:'no-cache'});
- if(!response.ok)throw Error(`jsDelivr returned HTTP ${response.status} for ${source.source}.`);
- let html=await response.text();
- if(!/<html[\s>]/i.test(html)&&!/<body[\s>]/i.test(html))throw Error('The CDN returned non-HTML content for this game.');
- const baseTag=`<base href="${source.dir.replace(/\"/g,'&quot;')}">`;
- if(/<head[^>]*>/i.test(html))html=html.replace(/<head([^>]*)>/i,`<head$1>${baseTag}`);else html=`<!doctype html><html><head>${baseTag}</head><body>${html}</body></html>`;
- frame.srcdoc=html;
- frame.onload=()=>status.classList.add('hidden');
- setTimeout(()=>{if(!status.classList.contains('hidden'))status.classList.add('hidden')},2500);
-}
-load().catch(e=>{status.innerHTML='<div><div style="font-size:24px;margin-bottom:10px">🎮 Game could not load</div><div style="font-weight:500;color:#aeb6cc;max-width:620px">'+esc(e.message||e)+'</div><button id="retry" style="margin-top:16px;border:0;border-radius:10px;padding:10px 14px;font-weight:800;cursor:pointer">Try again</button></div>';document.getElementById('retry').onclick=()=>location.reload()});
-</script>
-</body></html>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Aither Gaming</title><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#080b14;font-family:system-ui}#game{position:fixed;inset:0;width:100%;height:100%;border:0;background:#000}#status{position:fixed;z-index:20;inset:0;display:grid;place-items:center;color:white;background:#080b14;font-weight:700;padding:20px;text-align:center}</style></head><body><div id="status">Loading game…</div><iframe id="game" allow="fullscreen;autoplay;gamepad;pointer-lock;clipboard-read;clipboard-write" allowfullscreen></iframe><script>
+const frame=document.getElementById('game'),status=document.getElementById('status');
+const REPOS=[['bubbls','UGS-Assets'],['x8rr','Eaglercraft-Extras'],['aa-gamerz22','aa-gamerz-games'],['Shrimpy-com','Shrimpy-Game-Box'],['mariohd','JSGames'],['Rysm','html-minigames'],['stphung','classic-games-collection']];
+const norm=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+const enc=p=>String(p).split('/').filter(Boolean).map(encodeURIComponent).join('/');
+const slug=p=>String(p||'').split('/').filter(Boolean).pop()||'';
+async function tree(o,r){const m=await fetch('https://api.github.com/repos/'+o+'/'+r).then(x=>x.json()),b=m.default_branch||'main',d=await fetch('https://api.github.com/repos/'+o+'/'+r+'/git/trees/'+encodeURIComponent(b)+'?recursive=1').then(x=>x.json());return {branch:b,files:(d.tree||[]).filter(x=>x.type==='blob'&&/\.html?$/i.test(x.path)).map(x=>x.path)}}
+function score(p,g){let a=p.split('/'),f=a.at(-1).replace(/\.html?$/i,''),n=norm(g.name),s=norm(slug(g.path)),v=0;if(norm(f)===n)v+=100;if(norm(f)===s)v+=95;if(norm(a.at(-2)||'')===n)v+=80;if(norm(a.at(-2)||'')===s)v+=75;if(f.toLowerCase()==='index')v+=15;return v-a.length}
+async function resolve(g){let all=[];await Promise.all(REPOS.map(async x=>{try{let t=await tree(x[0],x[1]);t.files.forEach(p=>all.push({o:x[0],r:x[1],b:t.branch,p,score:score(p,g)}))}catch(e){}}));all.sort((a,b)=>b.score-a.score);let x=all[0];if(!x||x.score<15)throw Error('Game source not found');let u='https://cdn.jsdelivr.net/gh/'+x.o+'/'+x.r+'@'+encodeURIComponent(x.b)+'/'+enc(x.p);return {url:u,dir:u.slice(0,u.lastIndexOf('/')+1)}}
+async function game(){let p=new URLSearchParams(location.search).get('game');if(!p)throw Error('No game selected');let [a,b]=await Promise.all([fetch('games.json',{cache:'no-store'}).then(x=>x.json()),fetch('ai-games.json',{cache:'no-store'}).then(x=>x.json()).catch(()=>[])]);let g=[...a,...b].find(x=>x.path===p);if(!g)throw Error('Game not found');return g}
+function merger(base){return '<script>(function(){var base='+JSON.stringify(base)+',cfg=window.fileMergerConfig;if(!cfg||!cfg.files)return;var originalFetch=window.fetch.bind(window),originalXHR=window.XMLHttpRequest,merged={};function match(u,n){u=decodeURIComponent(String(u).split("?")[0]);return u.endsWith("/"+n)||u===n}async function merge(f){var parts=[];for(var i=1;i<=(f.parts||1);i++){var r=await originalFetch(base+encodeURIComponent(f.name)+".part"+i,{cache:"force-cache"});if(!r.ok)throw Error(f.name+" part "+i+" HTTP "+r.status);parts.push(await r.arrayBuffer())}var size=parts.reduce(function(a,b){return a+b.byteLength},0),out=new Uint8Array(size),off=0;parts.forEach(function(x){out.set(new Uint8Array(x),off);off+=x.byteLength});merged[f.name]=out.buffer}cfg.files.forEach(function(f){merge(f).catch(function(e){console.error("[Aither CDN]",e)})});function response(n){return new Response(merged[n],{status:200,headers:{"Content-Type":/wasm/i.test(n)?"application/wasm":"application/octet-stream"}})}window.fetch=function(u){var f=cfg.files.find(function(x){return match(u,x.name)});if(!f)return originalFetch.apply(this,arguments);return new Promise(function(ok,no){var t=setInterval(function(){if(merged[f.name]){clearInterval(t);ok(response(f.name))}},100);setTimeout(function(){clearInterval(t);no(Error("Timed out loading "+f.name))},180000)})};window.XMLHttpRequest=function(){var x=new originalXHR(),open=x.open.bind(x),send=x.send.bind(x),u="";x.open=function(m,z){u=z;return open.apply(x,arguments)};x.send=function(){var f=cfg.files.find(function(y){return match(u,y.name)});if(!f)return send.apply(x,arguments);var done=function(){if(!merged[f.name])return setTimeout(done,100);Object.defineProperties(x,{status:{value:200},statusText:{value:"OK"},response:{value:merged[f.name]},readyState:{value:4}});setTimeout(function(){if(x.onreadystatechange)x.onreadystatechange();if(x.onload)x.onload({target:x})},0)};done()};return x}})();</script>'}
+async function load(){let g=await game(),s;if(g.category==='AI Originals'||String(g.path).includes('/ai-')){let e=g.entry||'index.html',u='https://cdn.jsdelivr.net/gh/AitherNexus/AitherGaming@main/'+enc(g.path)+'/'+enc(e);s={url:u,dir:u.slice(0,u.lastIndexOf('/')+1)}}else s=await resolve(g);status.textContent='Loading '+g.name+' from jsDelivr…';let r=await fetch(s.url);if(!r.ok)throw Error('CDN HTTP '+r.status);let h=await r.text();let base='<base href="'+s.dir.replace(/"/g,'&quot;')+'">';h=h.replace(/<base[^>]*>/gi,'');h=/<head[^>]*>/i.test(h)?h.replace(/<head([^>]*)>/i,'<head$1>'+base):'<!doctype html><html><head>'+base+'</head><body>'+h+'</body></html>';h=h.replace(/<script[^>]+src=["']https:\/\/cdn\.jsdelivr\.net\/gh\/bubbls\/UGS-Assets@[^"']+\/merge\.js["'][^>]*><\/script>/i,'');let i=h.indexOf('<script',h.indexOf('window.fileMergerConfig'));if(i>=0)h=h.slice(0,i)+merger(s.dir+'Build/')+h.slice(i);frame.srcdoc=h;frame.onload=()=>status.remove()}
+load().catch(e=>{status.textContent='🎮 '+(e.message||e)+' — Try again';status.onclick=()=>location.reload()});
+</script></body></html>
