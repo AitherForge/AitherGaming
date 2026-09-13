@@ -1,5 +1,7 @@
 (() => {
-  const PLAYER = 'cdn-player.html?game=';
+  // Bump this whenever the player changes so iOS/Safari cannot keep an old cached launcher.
+  const PLAYER_VERSION = '8225b6d';
+  const PLAYER = 'cdn-player.html?v=' + PLAYER_VERSION + '&game=';
   const toPlayer = (path) => {
     if (!path) return;
     location.href = PLAYER + encodeURIComponent(path);
