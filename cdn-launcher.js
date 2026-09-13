@@ -1,11 +1,28 @@
 (() => {
-  // Bump this whenever the player changes so iOS/Safari cannot keep an old cached launcher.
-  const PLAYER_VERSION = '8225b6d';
-  const PLAYER = 'cdn-player.html?v=' + PLAYER_VERSION + '&game=';
+  const PLAYER_VERSION = 'b39ce5f';
+  const PLAYER = 'cdn-player-v2.html?v=' + PLAYER_VERSION + '&game=';
+
+  const playerUrl = (path) => PLAYER + encodeURIComponent(path || '');
+
+  const prewarm = (path) => {
+    if (!path) return;
+    try {
+      const link = document.createElement('link');
+      link.rel = 'prefetch';
+      link.href = playerUrl(path);
+      document.head.appendChild(link);
+    } catch (_) {}
+  };
+
   const toPlayer = (path) => {
     if (!path) return;
-    location.href = PLAYER + encodeURIComponent(path);
+    location.href = playerUrl(path);
   };
+
+  document.addEventListener('pointerdown', (event) => {
+    const play = event.target.closest('[data-play]');
+    if (play) prewarm(play.dataset.play);
+  }, { capture: true, passive: true });
 
   document.addEventListener('click', (event) => {
     const play = event.target.closest('[data-play]');
